@@ -2,6 +2,10 @@
   <img src="https://img.shields.io/badge/SeaRM-Maritime%20Operations%20Platform-0f172a?style=for-the-badge&logo=anchor&logoColor=06b6d4" alt="SeaRM" />
 </p>
 
+<p align="center">
+  <img width="250" height="250" alt="image (3)" src="https://github.com/user-attachments/assets/18049ab8-de04-4330-9542-843e07bccd0d" />
+</p>
+
 <h1 align="center">SeaRM</h1>
 
 <p align="center">
