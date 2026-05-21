@@ -832,5 +832,7 @@ MIT License. See [LICENSE](LICENSE) for details.
 Built with [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [Neon PostgreSQL](https://neon.tech/), [Recharts](https://recharts.org/), and [Vercel](https://vercel.com/).
 
 ---
+<img width="1917" height="907" alt="image" src="https://github.com/user-attachments/assets/d902ab24-daac-4c43-ab9a-984e7f6e944b" />
+
 
 <p align="center"><strong>Built for maritime operations.</strong></p>
