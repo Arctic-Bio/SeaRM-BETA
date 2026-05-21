@@ -40,6 +40,7 @@ const navSections = [
     items: [
       { href: "/ships", label: "Ships", icon: Ship, settingsKey: "page_ships" },
       { href: "/voyages", label: "Campaigns", icon: Map, settingsKey: "page_voyages" },
+      { href: "/map", label: "Live Map", icon: Navigation, settingsKey: null },
       { href: "/availability", label: "Crew Calendar", icon: Calendar, settingsKey: "page_availability" },
     ],
   },

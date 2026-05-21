@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { Loader2, ChevronLeft, ChevronRight, Search, Calendar, Users, Ship, Anchor } from "lucide-react"
+import { Loader2, ChevronLeft, ChevronRight, Search, Calendar, Users, Ship, Anchor, LayoutGrid, GanttChart } from "lucide-react"
 import Link from "next/link"
+import { CrewHeatmapCalendar } from "@/components/crew-heatmap-calendar"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -35,6 +36,7 @@ export default function AvailabilityPage() {
   const { data, isLoading } = useSWR("/api/availability", fetcher)
   const [search, setSearch] = useState("")
   const [monthOffset, setMonthOffset] = useState(0)
+  const [viewMode, setViewMode] = useState<"timeline" | "heatmap">("timeline")
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const now = new Date()
@@ -114,16 +116,42 @@ export default function AvailabilityPage() {
             <h1 className="text-2xl font-bold tracking-tight text-balance">Crew Availability</h1>
             <p className="text-sm text-muted-foreground mt-1">Timeline view of crew assignments across voyages</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setMonthOffset((m) => m - 3)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs font-medium min-w-24 justify-center" onClick={() => setMonthOffset(0)}>
-              {monthOffset === 0 ? "Current" : months[0]?.label.split(" ")[0]}
-            </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setMonthOffset((m) => m + 3)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-3">
+            {/* View mode toggle */}
+            <div className="flex items-center rounded-lg border bg-muted/30 p-0.5">
+              <Button
+                variant={viewMode === "timeline" ? "default" : "ghost"}
+                size="sm"
+                className={cn("h-7 px-3 text-xs gap-1.5", viewMode !== "timeline" && "text-muted-foreground")}
+                onClick={() => setViewMode("timeline")}
+              >
+                <GanttChart className="h-3.5 w-3.5" />
+                Timeline
+              </Button>
+              <Button
+                variant={viewMode === "heatmap" ? "default" : "ghost"}
+                size="sm"
+                className={cn("h-7 px-3 text-xs gap-1.5", viewMode !== "heatmap" && "text-muted-foreground")}
+                onClick={() => setViewMode("heatmap")}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Heatmap
+              </Button>
+            </div>
+
+            {viewMode === "timeline" && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setMonthOffset((m) => m - 3)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs font-medium min-w-24 justify-center" onClick={() => setMonthOffset(0)}>
+                  {monthOffset === 0 ? "Current" : months[0]?.label.split(" ")[0]}
+                </Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setMonthOffset((m) => m + 3)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -168,8 +196,17 @@ export default function AvailabilityPage() {
           </div>
         </div>
 
-        {/* Timeline */}
-        <Card className="overflow-hidden">
+        {/* Heatmap Calendar View */}
+        {viewMode === "heatmap" && (
+          <Card>
+            <CardContent className="p-4 md:p-6">
+              <CrewHeatmapCalendar crew={crew} assignments={assignments} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Timeline View */}
+        {viewMode === "timeline" && <Card className="overflow-hidden">
           <div className="overflow-x-auto" ref={scrollRef}>
             <div className="min-w-[1000px]">
 
@@ -329,7 +366,8 @@ export default function AvailabilityPage() {
               <span className="flex items-center gap-1.5"><span className="h-px w-4 border-t border-dashed border-success" /> Available</span>
             </div>
           </div>
-        </Card>
+        </Card>}
+        
       </div>
     </TooltipProvider>
   )

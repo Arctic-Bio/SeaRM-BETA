@@ -2,10 +2,6 @@
   <img src="https://img.shields.io/badge/SeaRM-Maritime%20Operations%20Platform-0f172a?style=for-the-badge&logo=anchor&logoColor=06b6d4" alt="SeaRM" />
 </p>
 
-<p align="center">
-  <img width="250" height="250" alt="image (3)" src="https://github.com/user-attachments/assets/18049ab8-de04-4330-9542-843e07bccd0d" />
-</p>
-
 <h1 align="center">SeaRM</h1>
 
 <p align="center">
@@ -82,12 +78,36 @@ SeaRM (Sea Resource Manager) is a comprehensive, production-ready platform purpo
 ### Fleet & Voyage Operations
 | Feature | Description |
 |---|---|
-| **Ship Registry** | Full vessel database with type, flag, tonnage, capacity, home port, and build year |
+| **Ship Registry** | Full vessel database with type, flag, tonnage, capacity, home port, and build year. Inline editing with sectioned form (Identity, Registration, Specifications, Notes) |
+| **Ship Editing** | Edit any ship via pencil icon on hover. Pre-populated form with all fields, activity logging on save |
 | **Voyage Management** | Plan and track voyages with ports, dates, mission types, and crew assignments |
 | **Position Management** | Define crew positions per voyage with skill requirements and auto-matching |
 | **Crew Assignments** | Assign crew to voyages with role, status, performance reviews, and date tracking |
 | **Ship Maintenance** | Track maintenance schedules, costs, completion status, and technician assignments |
 | **Ship Supplies** | Inventory management for vessel supplies with quantities, costs, and reorder tracking |
+
+### Live Vessel Map
+| Feature | Description |
+|---|---|
+| **Multi-Source Tracking** | Aggregate vessel positions from AISHub, MarineTraffic, VesselFinder, AIS Stream (WebSocket), custom REST APIs, and internal fleet |
+| **Live/Passthrough Mode** | External source data displayed in-memory without saving to database -- only internal fleet persists |
+| **Viewport Rendering** | Only renders markers for vessels within the current viewport (max 800) for performance with thousands of vessels |
+| **Weather Overlays** | Real-time weather tile layers: RainViewer (free precipitation radar), OpenWeatherMap (wind/temp/clouds/pressure), NOAA NEXRAD (free US radar), Ocean Depth (GEBCO/NCEI bathymetry), and custom tile URLs |
+| **Weather Provider Management** | Add/remove weather providers, toggle individual layers, global opacity slider, API key management, bring-your-own tile URLs |
+| **Vessel Search** | Search across all loaded vessels (DB + live) by name, MMSI, IMO, callsign, flag, destination, or source |
+| **Ship Type Filtering** | Filter by Cargo, Tanker, Passenger, Fishing, Tug, Pleasure, Military, SAR, and more |
+| **Multiple Base Maps** | Dark Ocean, Satellite, Nautical, and Light tile layers |
+| **Auto-Refresh** | 30-second refresh cycle with pause/resume, manual refresh, and countdown timer |
+
+### Crew Availability Heatmap
+| Feature | Description |
+|---|---|
+| **Heatmap Calendar** | Traditional month-grid calendar with days color-coded by crew availability count |
+| **Heat Scale** | White = no crew available, progressively darker red = more crew available on that day |
+| **Day Tooltips** | Hover any day to see a list of available crew members with their departments |
+| **Assignment Awareness** | Automatically subtracts days blocked by active assignments from availability windows |
+| **Month Navigation** | Navigate between months with arrows or jump to today |
+| **Timeline Toggle** | Switch between Gantt-style timeline view and heatmap calendar view |
 
 ### Safety & Compliance
 | Feature | Description |
@@ -188,7 +208,8 @@ searm/
 │   ├── users/                        # User management
 │   ├── how-to/                       # Interactive documentation
 │   ├── onboarding/                   # Onboarding management
-│   ├── availability/                 # Crew availability
+│   ├── availability/                 # Crew availability (timeline + heatmap)
+│   ├── map/                          # Live vessel map with weather
 │   ├── upload/                       # Bulk CSV upload
 │   ├── login/                        # Authentication
 │   └── page.tsx                      # Dashboard with stats + charts
@@ -199,6 +220,13 @@ searm/
 │   ├── dashboard-shell.tsx           # Layout wrapper
 │   ├── crew-table.tsx                # Reusable crew data table
 │   ├── csv-uploader.tsx              # Bulk CSV import
+│   ├── crew-heatmap-calendar.tsx     # Availability heatmap calendar
+│   ├── map/                          # Map components
+│   │   ├── vessel-map.tsx            # Leaflet map with weather tile layers
+│   │   ├── vessel-list-panel.tsx     # Searchable vessel list
+│   │   ├── source-panel.tsx          # Data source management
+│   │   ├── weather-panel.tsx         # Weather provider management
+│   │   └── layers-panel.tsx          # Base map layer selector
 │   ├── signature-pad.tsx             # E-signature capture
 │   ├── skill-badge.tsx               # Skill rating display
 │   ├── star-rating.tsx               # Star rating input
@@ -222,6 +250,11 @@ searm/
 │   │   ├── dispatcher.ts            # Event hook dispatcher
 │   │   ├── validator.ts             # JSON manifest validation
 │   │   └── types.ts                  # Type definitions
+│   ├── map/                          # Map subsystem
+│   │   ├── types.ts                  # Vessel position types, ship categories
+│   │   ├── source-config.ts          # Source type definitions + parsers
+│   │   ├── weather-config.ts         # Weather provider registry + RainViewer API
+│   │   └── upsert.ts                 # DB upsert for internal fleet positions
 │   └── widgets/                      # Widget subsystem
 │       ├── index.ts                  # Public API
 │       ├── data-sources.ts           # Data source definitions + column schemas
@@ -245,6 +278,7 @@ searm/
 | **Auth** | Custom JWT (jose) + bcrypt password hashing |
 | **Email** | Nodemailer with encrypted SMTP credentials |
 | **Charts** | Recharts 2.15 |
+| **Maps** | Leaflet with custom tile layers + weather overlays |
 | **Forms** | React Hook Form + Zod validation |
 | **Data Fetching** | SWR for client-side caching and revalidation |
 | **CSV Parsing** | PapaParse |
@@ -386,7 +420,8 @@ SeaRM uses **33 PostgreSQL tables** organized into 6 domains:
 | `/positions` | Position Management | Define and manage crew positions |
 | `/tasks` | Task Management | Operational tasks with assignment and tracking |
 | `/incidents` | Safety Incidents | Incident reporting and resolution tracking |
-| `/availability` | Crew Availability | Availability calendar and scheduling |
+| `/availability` | Crew Availability | Availability calendar with timeline and heatmap views |
+| `/map` | Live Vessel Map | Real-time multi-source vessel tracking with weather overlays |
 | `/onboarding` | Onboarding | Checklist management and progress tracking |
 | `/email` | Email System | Templates, triggers, queue, and providers |
 | `/integrations` | Widget Builder | Create, manage, and template widgets |
@@ -483,6 +518,13 @@ SeaRM uses **33 PostgreSQL tables** organized into 6 domains:
 | `GET/POST` | `/api/widgets` | List/create widgets |
 | `POST` | `/api/widgets/preview` | Generate live widget preview |
 | `GET` | `/api/widgets/embed/[id]` | Serve embedded widget (public) |
+
+#### Live Map
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET/POST/PUT/DELETE` | `/api/map/sources` | Vessel tracking source CRUD + activate/deactivate |
+| `GET` | `/api/map/positions` | Vessel positions from DB (internal fleet) |
+| `POST` | `/api/map/fetch` | Fetch from a source. External = live passthrough, Internal Fleet = DB persist |
 
 #### System
 | Method | Endpoint | Description |
@@ -836,7 +878,5 @@ MIT License. See [LICENSE](LICENSE) for details.
 Built with [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [Neon PostgreSQL](https://neon.tech/), [Recharts](https://recharts.org/), and [Vercel](https://vercel.com/).
 
 ---
-<img width="1917" height="907" alt="image" src="https://github.com/user-attachments/assets/d902ab24-daac-4c43-ab9a-984e7f6e944b" />
-
 
 <p align="center"><strong>Built for maritime operations.</strong></p>
