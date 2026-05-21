@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { SignaturePad } from "@/components/signature-pad"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -20,6 +22,8 @@ import {
   Upload, Download, Loader2, CheckCircle2, AlertTriangle,
   MapPin, Lightbulb, PenLine, Check, X, Timer, Pencil, Save,
   Trash2,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -39,8 +43,13 @@ export default function CrewPortalPage() {
   const [signOpen, setSignOpen] = useState(false)
   const [signDocId, setSignDocId] = useState("")
   const [signDocName, setSignDocName] = useState("")
+  const [signDocType, setSignDocType] = useState("")
   const [signName, setSignName] = useState("")
   const [signing, setSigning] = useState(false)
+  const [signMode, setSignMode] = useState<"typed" | "drawn">("typed")
+  const [signDrawnData, setSignDrawnData] = useState<string | null>(null)
+  const [signAgreed, setSignAgreed] = useState(false)
+  const [signStep, setSignStep] = useState<"preview" | "sign">("preview")
   const [editProfile, setEditProfile] = useState(false)
   const [profileForm, setProfileForm] = useState({ first_name: "", last_name: "", pronouns: "" })
   const [savingProfile, setSavingProfile] = useState(false)
@@ -115,19 +124,32 @@ export default function CrewPortalPage() {
     else toast.error("Failed to delete document")
   }
 
-  const openSign = (docId: string, docName: string) => {
+  const openSign = (docId: string, docName: string, docType?: string) => {
     setSignDocId(docId)
     setSignDocName(docName)
+    setSignDocType(docType || "")
     setSignName("")
+    setSignMode("typed")
+    setSignDrawnData(null)
+    setSignAgreed(false)
+    setSignStep("preview")
     setSignOpen(true)
   }
 
   const handleSign = async () => {
-    if (!signName.trim()) { toast.error("Please type your full name to sign"); return }
+    if (!signName.trim()) { toast.error("Please type your full legal name"); return }
+    if (!signAgreed) { toast.error("You must agree to the electronic signature terms"); return }
+    if (signMode === "drawn" && !signDrawnData) { toast.error("Please draw your signature on the pad"); return }
     setSigning(true)
     const res = await fetch("/api/portal/sign", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ document_id: signDocId, signature_name: signName }),
+      body: JSON.stringify({
+        document_id: signDocId,
+        signature_name: signName,
+        signature_type: signMode,
+        signature_image: signMode === "drawn" ? signDrawnData : null,
+        agreed: true,
+      }),
     })
     setSigning(false)
     if (res.ok) {
@@ -744,8 +766,16 @@ export default function CrewPortalPage() {
                                 {esign.signed ? <CheckCircle2 className="h-3.5 w-3.5" /> : esign.uploaded ? <PenLine className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium">{esign.label}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium">{esign.label}</p>
+                                  {esign.is_global && (
+                                    <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-4 bg-chart-2/10 text-chart-2 border-chart-2/20">Global</Badge>
+                                  )}
+                                </div>
                                 {esign.description && <p className="text-xs text-muted-foreground mt-0.5">{esign.description}</p>}
+                                {!esign.uploaded && !esign.signed && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">Your coordinator will upload this document for you to sign.</p>
+                                )}
                                 {esign.signed && esign.signature_name && (
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     Signed as <span className="italic font-serif">{esign.signature_name}</span>
@@ -765,12 +795,14 @@ export default function CrewPortalPage() {
                                         <Download className="h-3 w-3 mr-1" />View
                                       </a>
                                     </Button>
-                                    <Button size="sm" className="text-xs h-7 gap-1" onClick={() => openSign(esign.doc_id, esign.file_name)}>
+                                    <Button size="sm" className="text-xs h-7 gap-1" onClick={() => openSign(esign.doc_id, esign.file_name, esign.label)}>
                                       <PenLine className="h-3 w-3" />Sign
                                     </Button>
                                   </div>
                                 ) : (
-                                  <Badge variant="outline" className="text-[9px] bg-muted text-muted-foreground">Awaiting Upload</Badge>
+                                  <Badge variant="outline" className="text-[9px] bg-chart-1/10 text-chart-1 border-chart-1/20 gap-0.5">
+                                    <Clock className="h-2.5 w-2.5" />Pending from Admin
+                                  </Badge>
                                 )}
                               </div>
                             </div>
@@ -811,7 +843,7 @@ export default function CrewPortalPage() {
                                     <Download className="h-3 w-3 mr-1" />View
                                   </a>
                                 </Button>
-                                <Button size="sm" className="text-xs h-7 gap-1" onClick={() => openSign(doc.id, doc.file_name)}>
+                                <Button size="sm" className="text-xs h-7 gap-1" onClick={() => openSign(doc.id, doc.file_name, doc.document_type)}>
                                   <PenLine className="h-3 w-3" />Sign
                                 </Button>
                               </div>
@@ -1036,42 +1068,163 @@ export default function CrewPortalPage() {
         )}
       </div>
 
-      {/* E-Sign Dialog */}
+      {/* E-Sign Dialog -- Professional Signing Modal */}
       <Dialog open={signOpen} onOpenChange={setSignOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Electronic Signature</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <PenLine className="h-4 w-4 text-primary" />
+              </div>
+              Electronic Signature
+            </DialogTitle>
             <DialogDescription>
-              You are signing: <strong>{signDocName}</strong>
+              {signStep === "preview" ? "Review the document before signing." : "Complete your electronic signature below."}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="rounded-lg border border-dashed border-primary/30 bg-primary/[0.02] p-6 text-center">
-              <PenLine className="h-8 w-8 text-primary/40 mx-auto mb-3" />
-              <p className="text-xs text-muted-foreground mb-3">
-                By typing your full legal name below, you acknowledge that this constitutes your electronic signature and that you have reviewed this document.
-              </p>
-              <Input
-                value={signName}
-                onChange={(e) => setSignName(e.target.value)}
-                placeholder="Type your full legal name"
-                className="text-center text-lg font-serif italic"
-              />
-            </div>
-            {signName.trim() && (
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Signature preview:</p>
-                <p className="text-2xl font-serif italic text-foreground">{signName}</p>
+
+          {/* Step 1: Document Preview */}
+          {signStep === "preview" && (
+            <div className="flex flex-col gap-4">
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-chart-3/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-5 w-5 text-chart-3" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{signDocName}</p>
+                    {signDocType && <p className="text-xs text-muted-foreground mt-0.5">{signDocType.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">Please review this document carefully before signing.</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSignOpen(false)}>Cancel</Button>
-            <Button onClick={handleSign} disabled={signing || !signName.trim()} className="gap-1">
-              {signing ? <Loader2 className="h-4 w-4 animate-spin" /> : <PenLine className="h-4 w-4" />}
-              Confirm Signature
-            </Button>
-          </DialogFooter>
+
+              {/* Embedded document preview */}
+              <div className="rounded-lg border overflow-hidden bg-card">
+                <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground">Document Preview</p>
+                  <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" asChild>
+                    <a href={`/api/documents/${signDocId}`} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-3 w-3" />Open Full Size
+                    </a>
+                  </Button>
+                </div>
+                <iframe
+                  src={`/api/documents/${signDocId}?inline=true`}
+                  className="w-full h-[300px] border-0"
+                  title="Document preview"
+                />
+              </div>
+
+              <DialogFooter className="flex-row justify-between sm:justify-between">
+                <Button variant="outline" onClick={() => setSignOpen(false)}>Cancel</Button>
+                <Button onClick={() => setSignStep("sign")} className="gap-1">
+                  I Have Reviewed This Document
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {/* Step 2: Sign */}
+          {signStep === "sign" && (
+            <div className="flex flex-col gap-4">
+              {/* Document being signed */}
+              <div className="rounded-lg border bg-muted/20 p-3 flex items-center gap-3">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{signDocName}</p>
+                  {signDocType && <p className="text-[10px] text-muted-foreground">{signDocType.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</p>}
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs shrink-0" onClick={() => setSignStep("preview")}>
+                  <ChevronLeft className="h-3 w-3 mr-1" />Review
+                </Button>
+              </div>
+
+              {/* Signature Mode Tabs */}
+              <div className="flex rounded-lg border p-1 bg-muted/30">
+                <button
+                  type="button"
+                  onClick={() => setSignMode("typed")}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-all ${
+                    signMode === "typed" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Type Signature
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSignMode("drawn")}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-all ${
+                    signMode === "drawn" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Draw Signature
+                </button>
+              </div>
+
+              {/* Full Legal Name (required for both modes) */}
+              <div>
+                <label htmlFor="sign-name" className="text-xs font-medium text-muted-foreground mb-1.5 block">Full Legal Name</label>
+                <Input
+                  id="sign-name"
+                  value={signName}
+                  onChange={(e) => setSignName(e.target.value)}
+                  placeholder="Enter your full legal name"
+                  className="text-center text-lg font-serif italic h-12"
+                  autoComplete="name"
+                />
+              </div>
+
+              {/* Typed Signature Preview */}
+              {signMode === "typed" && signName.trim() && (
+                <div className="rounded-lg border-2 border-dashed border-primary/20 bg-card p-6 text-center">
+                  <p className="text-[10px] text-muted-foreground mb-2 uppercase tracking-wider font-medium">Signature Preview</p>
+                  <p className="text-3xl font-serif italic text-foreground leading-relaxed">{signName}</p>
+                  <div className="mt-3 mx-8 border-t border-muted-foreground/20" />
+                  <p className="text-[10px] text-muted-foreground mt-1">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+                </div>
+              )}
+
+              {/* Drawn Signature Pad */}
+              {signMode === "drawn" && (
+                <SignaturePad
+                  onSignatureChange={setSignDrawnData}
+                  width={480}
+                  height={180}
+                />
+              )}
+
+              {/* Agreement Checkbox */}
+              <div className="rounded-lg border bg-muted/20 p-4">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="sign-agree"
+                    checked={signAgreed}
+                    onCheckedChange={(checked) => setSignAgreed(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="sign-agree" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                    I, <strong className="text-foreground">{signName || "[your name]"}</strong>, confirm that I have reviewed and understand the contents of this document. I agree that my {signMode === "drawn" ? "drawn" : "typed"} signature constitutes a legally binding electronic signature under applicable law, with the same force and effect as a handwritten signature.
+                  </label>
+                </div>
+              </div>
+
+              <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+                <Button variant="outline" onClick={() => setSignStep("preview")}>
+                  <ChevronLeft className="h-4 w-4 mr-1" />Back
+                </Button>
+                <Button
+                  onClick={handleSign}
+                  disabled={signing || !signName.trim() || !signAgreed || (signMode === "drawn" && !signDrawnData)}
+                  className="gap-1"
+                >
+                  {signing ? <Loader2 className="h-4 w-4 animate-spin" /> : <PenLine className="h-4 w-4" />}
+                  Apply Signature
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

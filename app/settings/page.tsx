@@ -13,8 +13,10 @@ import { toast } from "sonner"
 import {
   Settings, LayoutDashboard, Users, Ship, Map, Calendar,
   CheckSquare, ClipboardList, AlertTriangle, Download, Kanban, Shield, Loader2, Save,
-  FileText, Plus, Trash2, GripVertical, PenLine, Eye, EyeOff, X, XCircle,
+  FileText, Plus, Trash2, GripVertical, PenLine, Eye, EyeOff, X, XCircle, Upload, Globe,
 } from "lucide-react"
+import { Switch as SwitchToggle } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -139,6 +141,51 @@ export default function SettingsPage() {
     setSavingDocs(false)
     if (res.ok) { toast.success("Required documents updated"); setReqDocs(null); mutate() }
     else toast.error("Failed to save")
+  }
+
+  // Global always-required documents
+  const { data: globalDocs, mutate: mutateGlobalDocs } = useSWR("/api/settings/global-documents", fetcher)
+  const [globalUploading, setGlobalUploading] = useState(false)
+  const [globalDocType, setGlobalDocType] = useState("")
+  const [globalDocLabel, setGlobalDocLabel] = useState("")
+  const [globalRequiresSig, setGlobalRequiresSig] = useState(true)
+  const [deletingGlobalId, setDeletingGlobalId] = useState<string | null>(null)
+
+  const handleGlobalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!globalDocType.trim()) { toast.error("Please enter a document type"); return }
+    setGlobalUploading(true)
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("document_type", globalDocType.trim().toLowerCase().replace(/\s+/g, "_"))
+    formData.append("label", globalDocLabel.trim() || globalDocType.trim())
+    formData.append("requires_signature", globalRequiresSig ? "true" : "false")
+    const res = await fetch("/api/settings/global-documents", { method: "POST", body: formData })
+    setGlobalUploading(false)
+    e.target.value = ""
+    if (res.ok) {
+      toast.success("Global document uploaded successfully")
+      setGlobalDocType("")
+      setGlobalDocLabel("")
+      setGlobalRequiresSig(true)
+      mutateGlobalDocs()
+    } else {
+      const err = await res.json()
+      toast.error(err.error || "Upload failed")
+    }
+  }
+
+  const handleDeleteGlobal = async (id: string) => {
+    setDeletingGlobalId(id)
+    const res = await fetch("/api/settings/global-documents", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    })
+    setDeletingGlobalId(null)
+    if (res.ok) { toast.success("Global document deleted"); mutateGlobalDocs() }
+    else toast.error("Failed to delete")
   }
 
   if (!user || user.role !== "sysadmin") {
@@ -373,6 +420,129 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Always Required Documents (Global) */}
+      <Card className="mt-4">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary" />
+                Always Required Documents
+              </CardTitle>
+              <CardDescription>
+                Upload documents here once and they will automatically appear in every crew member and applicant portal.
+                Documents marked for e-signature will require each crew member to sign individually.
+              </CardDescription>
+            </div>
+            {Array.isArray(globalDocs) && globalDocs.length > 0 && (
+              <Badge variant="outline" className="text-xs">{globalDocs.length} global</Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Existing global documents */}
+          {Array.isArray(globalDocs) && globalDocs.length > 0 ? (
+            <div className="flex flex-col gap-2 mb-4">
+              {globalDocs.map((doc: any) => (
+                <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                  <div className="h-8 w-8 rounded-md bg-chart-2/10 flex items-center justify-center shrink-0">
+                    <Globe className="h-4 w-4 text-chart-2" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium truncate">{doc.file_name}</span>
+                      <Badge variant="outline" className="text-[9px]">{doc.document_type?.replace(/_/g, " ")}</Badge>
+                      {doc.requires_signature && (
+                        <Badge variant="outline" className="text-[9px] bg-chart-4/10 text-chart-4 border-chart-4/20 gap-0.5">
+                          <PenLine className="h-2 w-2" />E-Sign Required
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-[9px] bg-chart-2/10 text-chart-2 border-chart-2/20">Global</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {doc.notes && <span>{doc.notes} -- </span>}
+                      Uploaded by {doc.uploaded_by || "admin"} on {new Date(doc.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
+                      <a href={`/api/documents/${doc.id}`} target="_blank" rel="noopener noreferrer">
+                        <Eye className="h-3 w-3" />View
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive"
+                      onClick={() => handleDeleteGlobal(doc.id)}
+                      disabled={deletingGlobalId === doc.id}
+                    >
+                      {deletingGlobalId === doc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-6 text-center text-sm text-muted-foreground border rounded-lg mb-4">
+              <Globe className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
+              No global documents uploaded yet. Upload a document below and it will appear in all crew portals automatically.
+            </div>
+          )}
+
+          {/* Upload new global document */}
+          <Separator className="mb-4" />
+          <p className="text-xs font-medium text-muted-foreground mb-3">Upload New Global Document</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Document Type</label>
+              <Input
+                value={globalDocType}
+                onChange={(e) => setGlobalDocType(e.target.value)}
+                placeholder="e.g. crew_contract, safety_policy"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Display Label (optional)</label>
+              <Input
+                value={globalDocLabel}
+                onChange={(e) => setGlobalDocLabel(e.target.value)}
+                placeholder="e.g. Crew Employment Contract"
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="global-esign"
+                checked={globalRequiresSig}
+                onCheckedChange={setGlobalRequiresSig}
+              />
+              <Label htmlFor="global-esign" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                <PenLine className="h-3 w-3 text-chart-4" />
+                Require E-Signature from each crew member
+              </Label>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5 relative" disabled={globalUploading || !globalDocType.trim()}>
+              {globalUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+              {globalUploading ? "Uploading..." : "Choose File & Upload"}
+              <input
+                type="file"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={handleGlobalUpload}
+                disabled={globalUploading || !globalDocType.trim()}
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              />
+            </Button>
+            <p className="text-[10px] text-muted-foreground">PDF, DOC, DOCX, PNG, JPG up to 10MB</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Document Verification Queue */}
       <Card className="mt-4">
         <CardHeader>
@@ -550,6 +720,11 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Footer Attribution */}
+      <div className="mt-8 py-4 border-t text-center">
+        <p className="text-[10px] text-muted-foreground/60">Created by BMK 2026, as part of project EVO</p>
+      </div>
     </div>
   )
 }

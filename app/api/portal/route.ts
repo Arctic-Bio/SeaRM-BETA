@@ -55,10 +55,51 @@ export async function GET() {
       }
     }
 
-    // Documents
+    // Auto-provision crew copies for global documents
+    const globalDocs = await sql`
+      SELECT id, document_type, file_name, mime_type, file_size, uploaded_by, requires_signature, notes, created_at
+      FROM file_storage
+      WHERE is_global = true AND global_source_id IS NULL
+    `
+    if (globalDocs.length > 0) {
+      // Find which global docs this crew member already has a copy of
+      const existingCopies = await sql`
+        SELECT global_source_id FROM file_storage
+        WHERE crew_id = ${crewId} AND global_source_id IS NOT NULL
+      `
+      const existingSourceIds = new Set(existingCopies.map((r: any) => r.global_source_id))
+      // Create missing copies (lightweight -- no file_data, references global source)
+      for (const gd of globalDocs) {
+        if (!existingSourceIds.has(gd.id)) {
+          try {
+            const docType = gd.document_type || "document"
+            const fileName = gd.file_name || "document"
+            const mimeType = gd.mime_type || "application/octet-stream"
+            const fileSize = gd.file_size ? Number(gd.file_size) : 0
+            const uploadedBy = gd.uploaded_by || "system"
+            const reqSig = gd.requires_signature === true
+            const gdNotes = gd.notes || null
+            await sql`
+              INSERT INTO file_storage (
+                crew_id, document_type, file_name, mime_type, file_size,
+                uploaded_by, requires_signature, is_global, global_source_id, notes
+              ) VALUES (
+                ${crewId}, ${docType}, ${fileName}, ${mimeType}, ${fileSize},
+                ${uploadedBy}, ${reqSig}, false, ${gd.id}, ${gdNotes}
+              )
+            `
+          } catch {
+            // Skip if provisioning fails (e.g. duplicate)
+          }
+        }
+      }
+    }
+
+    // Documents (now includes auto-provisioned global copies)
     const documents = await sql`
       SELECT id, document_type, file_name, mime_type, file_size, uploaded_by, verified, verified_by, verified_at,
-        expiry_date, notes, created_at, requires_signature, signed_by, signed_at, signature_name
+        expiry_date, notes, created_at, requires_signature, signed_by, signed_at, signature_name, signature_type,
+        global_source_id
       FROM file_storage
       WHERE crew_id = ${crewId}
       ORDER BY created_at DESC
@@ -106,8 +147,25 @@ export async function GET() {
         signature_name: matchingDoc?.signature_name || null,
         doc_id: matchingDoc?.id || null,
         file_name: matchingDoc?.file_name || null,
+        is_global: !!matchingDoc?.global_source_id,
       }
     })
+
+    // Also find global docs requiring signature that aren't in the required_esign list
+    const globalSignDocs = documents.filter((d: any) =>
+      d.global_source_id && d.requires_signature && !esignWithStatus.some((e: any) => e.doc_id === d.id)
+    ).map((d: any) => ({
+      type: d.document_type,
+      label: d.notes || d.file_name,
+      description: "Global document requiring your signature",
+      uploaded: true,
+      signed: !!d.signed_by,
+      signed_at: d.signed_at || null,
+      signature_name: d.signature_name || null,
+      doc_id: d.id,
+      file_name: d.file_name,
+      is_global: true,
+    }))
 
     // Compute completed onboarding items
     const completedReqs = requirements.filter((r: any) => r.completed)
@@ -193,7 +251,7 @@ export async function GET() {
       if (pendingTasks.length > 0) tips.push(`You have ${pendingTasks.length} pending task(s) to complete.`)
     }
 
-    return NextResponse.json({ profile, assignments, requirements, documents, tips, requiredDocuments: requiredWithStatus, tasks, requiredEsignDocuments: esignWithStatus, onboardingStages })
+    return NextResponse.json({ profile, assignments, requirements, documents, tips, requiredDocuments: requiredWithStatus, tasks, requiredEsignDocuments: [...esignWithStatus, ...globalSignDocs], onboardingStages })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

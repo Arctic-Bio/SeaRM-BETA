@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description: "Crew management and operations platform for SeaRM maritime volunteer organization. Manage applications, deployments, vessels, and campaigns.",
   keywords: ["crew management", "maritime operations", "volunteer management", "ship management", "SeaRM"],
   robots: { index: false, follow: false },
+  icons: {
+    icon: "/favicon.ico",
+  },
 }
 
 export const viewport: Viewport = {

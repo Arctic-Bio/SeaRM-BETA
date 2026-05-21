@@ -7,9 +7,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const inline = req.nextUrl.searchParams.get("inline") === "true"
-    const rows = await sql`SELECT file_data, file_name, mime_type FROM file_storage WHERE id = ${id}`
+    const rows = await sql`SELECT file_data, file_name, mime_type, global_source_id FROM file_storage WHERE id = ${id}`
     if (!rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    const doc = rows[0]
+    let doc = rows[0]
+    // If this is a crew copy of a global doc, serve the file from the global source
+    if (!doc.file_data && doc.global_source_id) {
+      const sourceRows = await sql`SELECT file_data, file_name, mime_type FROM file_storage WHERE id = ${doc.global_source_id}`
+      if (sourceRows.length) doc = { ...doc, file_data: sourceRows[0].file_data, file_name: sourceRows[0].file_name, mime_type: sourceRows[0].mime_type }
+    }
     // file_data comes back as a hex string from neon -- convert to buffer
     let buffer: Buffer
     if (typeof doc.file_data === "string") {

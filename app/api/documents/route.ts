@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const crewId = req.nextUrl.searchParams.get("crew_id")
     const shipId = req.nextUrl.searchParams.get("ship_id")
     const expiring = req.nextUrl.searchParams.get("expiring") // days
-    let query = `SELECT id, crew_id, ship_id, document_type, file_name, mime_type, file_size, uploaded_by, verified, verified_by, verified_at, expiry_date, notes, created_at, requires_signature, signed_by, signed_at, signature_name FROM file_storage WHERE 1=1`
+    let query = `SELECT id, crew_id, ship_id, document_type, file_name, mime_type, file_size, uploaded_by, verified, verified_by, verified_at, expiry_date, notes, created_at, requires_signature, signed_by, signed_at, signature_name, signature_type FROM file_storage WHERE 1=1`
     const params: any[] = []
     let idx = 0
     if (crewId) { idx++; query += ` AND crew_id = $${idx}`; params.push(crewId) }

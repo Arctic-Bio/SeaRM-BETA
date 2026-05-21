@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Anchor, Loader2, AlertCircle, ShieldCheck } from "lucide-react"
+import { Loader2, AlertCircle, ShieldCheck } from "lucide-react"
 
 export default function LoginPage() {
   const { login, register, user } = useAuth()
@@ -59,8 +59,8 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         <Card className="border-border/60 shadow-xl shadow-primary/[0.03]">
           <CardHeader className="text-center pb-2 pt-8">
-            <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/10">
-              <Anchor className="h-7 w-7 text-primary" />
+            <div className="mx-auto mb-4 h-32 w-32 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/10">
+              <img src="/logo.png" alt="SeaRM" className="h-21 w-21 opacity-90" />
             </div>
             <CardTitle className="text-xl font-bold tracking-tight text-balance">{"SeaRM"}</CardTitle>
             <CardDescription className="text-sm">

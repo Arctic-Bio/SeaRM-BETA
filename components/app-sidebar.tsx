@@ -4,10 +4,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard, Upload, Users, Anchor, ChevronLeft, ChevronRight,
+  LayoutDashboard, Upload, Users, ChevronLeft, ChevronRight,
   Ship, Navigation, CheckSquare, Kanban, Briefcase, Map, Download,
   AlertTriangle, ClipboardList, Calendar, Shield, LogOut, Settings,
-  Wrench, BookOpen,
+  Wrench, BookOpen, Mail, Puzzle, Plug,
 } from "lucide-react"
 import { useState, useCallback } from "react"
 import useSWR from "swr"
@@ -55,6 +55,9 @@ const navSections = [
     label: "Admin",
     items: [
       { href: "/users", label: "Users & Roles", icon: Shield, settingsKey: "page_users", sysadminOnly: true },
+      { href: "/email", label: "Email Automation", icon: Mail, settingsKey: null, sysadminOnly: true },
+      { href: "/integrations", label: "Widget Builder", icon: Plug, settingsKey: null, sysadminOnly: true },
+      { href: "/extensions", label: "Extensions", icon: Puzzle, settingsKey: null, sysadminOnly: true },
       { href: "/settings", label: "Settings", icon: Settings, settingsKey: null, sysadminOnly: true },
       { href: "/export", label: "Export Data", icon: Download, settingsKey: "page_export" },
       { href: "/how-to", label: "How to Use", icon: BookOpen, settingsKey: null },
@@ -92,8 +95,8 @@ export function AppSidebar() {
       >
         {/* Logo */}
         <div className="flex items-center border-b border-sidebar-border px-4 h-14 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary/15 flex items-center justify-center shrink-0">
-            <Anchor className="h-4.5 w-4.5 text-sidebar-primary" />
+          <div className="h-12 w-12 rounded-lg bg-sidebar-primary/15 flex items-center justify-center shrink-0">
+            <img src="/logo-sidebar.png" alt="SeaRM" className="h-8.75 w-8.75 opacity-90" />
           </div>
           {!collapsed && (
             <div className="ml-3 flex flex-col min-w-0">

@@ -45,7 +45,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Anchor,
   Loader2, User, Ship, Clock, LogIn, LogOut, Plus, Tag, X,
-  FileText, Upload, CheckCircle2, AlertTriangle, Download, Trash2, Shield, PenLine, Check,
+  FileText, Upload, CheckCircle2, AlertTriangle, Download, Trash2, Shield, PenLine, Check, Eye,
 } from "lucide-react"
 import { useState } from "react"
 import { mutate as globalMutate } from "swr"
@@ -81,6 +81,9 @@ export default function CrewDetailPage({
   const [docType, setDocType] = useState("passport")
   const [docExpiry, setDocExpiry] = useState("")
   const [docRequiresSig, setDocRequiresSig] = useState(false)
+  const [sigPreviewOpen, setSigPreviewOpen] = useState(false)
+  const [sigPreviewData, setSigPreviewData] = useState<{ name: string; type: string; image: string | null; docName: string; signedAt: string } | null>(null)
+  const [sigPreviewLoading, setSigPreviewLoading] = useState(false)
   const { data: seaTimeData, mutate: mutateSeaTime } = useSWR(`/api/crew/${id}/sea-time`, fetcher)
   const { data: checkinData, mutate: mutateCheckins } = useSWR(`/api/crew/${id}/checkins`, fetcher)
   const { data: tagsData, mutate: mutateTags } = useSWR(`/api/crew/${id}/tags`, fetcher)
@@ -172,6 +175,23 @@ export default function CrewDetailPage({
     const res = await fetch(`/api/documents/${docId}`, { method: "DELETE" })
     if (res.ok) { toast.success("Document permanently deleted"); mutateDocs() }
     else toast.error("Failed to delete document")
+  }
+
+  const viewSignature = async (docId: string, docName: string, signedAt: string) => {
+    setSigPreviewLoading(true)
+    setSigPreviewOpen(true)
+    try {
+      const res = await fetch(`/api/documents/${docId}/signature`)
+      if (res.ok) {
+        const data = await res.json()
+        setSigPreviewData({ name: data.signature_name, type: data.signature_type, image: data.signature_image, docName, signedAt })
+      } else {
+        setSigPreviewData(null)
+      }
+    } catch {
+      setSigPreviewData(null)
+    }
+    setSigPreviewLoading(false)
   }
 
   const handleAddSeaTime = async () => {
@@ -676,11 +696,21 @@ export default function CrewDetailPage({
                             </p>
                           )}
                         </div>
-                        <div className="shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           {isSigned ? (
-                            <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/20 gap-0.5">
-                              <CheckCircle2 className="h-2.5 w-2.5" />Signed
-                            </Badge>
+                            <>
+                              <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/20 gap-0.5">
+                                <CheckCircle2 className="h-2.5 w-2.5" />{matchingDoc?.signature_type === "drawn" ? "Drawn" : "Typed"}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] gap-1 text-muted-foreground"
+                                onClick={() => viewSignature(matchingDoc!.id, matchingDoc!.file_name, matchingDoc?.signed_at || "")}
+                              >
+                                <Eye className="h-3 w-3" />View
+                              </Button>
+                            </>
                           ) : matchingDoc ? (
                             <Badge variant="outline" className="text-[9px] bg-chart-3/10 text-chart-3 border-chart-3/20 gap-0.5">
                               <PenLine className="h-2.5 w-2.5" />Awaiting Signature
@@ -791,11 +821,21 @@ export default function CrewDetailPage({
                           <TableCell>
                             {doc.requires_signature ? (
                               doc.signed_by ? (
-                                <div className="flex flex-col">
-                                  <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/20 gap-0.5 w-fit">
-                                    <CheckCircle2 className="h-2.5 w-2.5" />Signed
-                                  </Badge>
-                                  <span className="text-[10px] text-muted-foreground italic font-serif mt-0.5">{doc.signature_name}</span>
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/20 gap-0.5 w-fit">
+                                      <CheckCircle2 className="h-2.5 w-2.5" />{doc.signature_type === "drawn" ? "Drawn" : "Typed"}
+                                    </Badge>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 text-[9px] px-1.5 gap-0.5 text-muted-foreground"
+                                      onClick={() => viewSignature(doc.id, doc.file_name, doc.signed_at || "")}
+                                    >
+                                      <Eye className="h-2.5 w-2.5" />View
+                                    </Button>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground italic font-serif">{doc.signature_name}</span>
                                   {doc.signed_at && <span className="text-[9px] text-muted-foreground">{new Date(doc.signed_at).toLocaleDateString()}</span>}
                                 </div>
                               ) : (
@@ -1099,6 +1139,74 @@ export default function CrewDetailPage({
           <DialogFooter>
             <Button variant="outline" onClick={() => setCheckinOpen(false)}>Cancel</Button>
             <Button onClick={handleCheckin}>{ciForm.check_type === "check_in" ? "Check In" : "Check Out"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signature Preview Dialog */}
+      <Dialog open={sigPreviewOpen} onOpenChange={setSigPreviewOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <PenLine className="h-4 w-4 text-success" />
+              </div>
+              Signature Details
+            </DialogTitle>
+            <DialogDescription>
+              Viewing electronic signature for this document.
+            </DialogDescription>
+          </DialogHeader>
+          {sigPreviewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : sigPreviewData ? (
+            <div className="flex flex-col gap-4">
+              {/* Document info */}
+              <div className="rounded-lg border bg-muted/20 p-3 flex items-center gap-3">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{sigPreviewData.docName}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Signed on {sigPreviewData.signedAt ? new Date(sigPreviewData.signedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Signature display */}
+              <div className="rounded-lg border-2 border-dashed border-primary/15 bg-card p-6">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium text-center mb-3">
+                  {sigPreviewData.type === "drawn" ? "Drawn Signature" : "Typed Signature"}
+                </p>
+                {sigPreviewData.type === "drawn" && sigPreviewData.image ? (
+                  <div className="flex justify-center">
+                    <img src={sigPreviewData.image} alt="Drawn signature" className="max-w-full max-h-32 object-contain" />
+                  </div>
+                ) : (
+                  <p className="text-3xl font-serif italic text-foreground text-center leading-relaxed">{sigPreviewData.name}</p>
+                )}
+                <div className="mt-4 mx-8 border-t border-muted-foreground/20" />
+                <p className="text-xs text-center text-muted-foreground mt-2 font-medium">{sigPreviewData.name}</p>
+              </div>
+
+              {/* Metadata */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-muted/20 p-2.5">
+                  <p className="text-[10px] text-muted-foreground font-medium">Signature Type</p>
+                  <p className="text-sm font-medium capitalize">{sigPreviewData.type}</p>
+                </div>
+                <div className="rounded-lg bg-muted/20 p-2.5">
+                  <p className="text-[10px] text-muted-foreground font-medium">Legal Name</p>
+                  <p className="text-sm font-medium">{sigPreviewData.name}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-sm text-muted-foreground">No signature data found for this document.</div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSigPreviewOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
