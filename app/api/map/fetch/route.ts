@@ -11,7 +11,7 @@ const sql = neon(process.env.DATABASE_URL!)
 // Only "internal_fleet" sources write positions to the DB (our own ships).
 export async function POST(req: Request) {
   try {
-    const { source_id } = await req.json()
+    const { source_id, missionBoundingBoxes, missionMMSIs } = await req.json()
     if (!source_id) return NextResponse.json({ error: "source_id required" }, { status: 400 })
 
     const sources = await sql`SELECT * FROM vessel_tracking_sources WHERE id = ${source_id}`
@@ -25,19 +25,33 @@ export async function POST(req: Request) {
 
     // AIS Stream: dedicated WebSocket consumer
     if (source.source_type === "aisstream") {
-      return await fetchAISStream(source)
+      return await fetchAISStream(source, missionBoundingBoxes, missionMMSIs)
     }
 
     // All other external REST sources
-    return await fetchExternalREST(source)
+    // Pass mission bounding boxes for post-fetch filtering
+    return await fetchExternalREST(source, missionBoundingBoxes)
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
 
+// ─── Bounding Box Filter Utility ───
+// Checks if a vessel position falls within any of the mission bounding boxes.
+// Each box is [[south, west], [north, east]].
+function isInBoundingBoxes(lat: number, lon: number, boxes: number[][][]): boolean {
+  for (const box of boxes) {
+    if (box.length < 2) continue
+    const [sw, ne] = box
+    const south = sw[0], west = sw[1], north = ne[0], east = ne[1]
+    if (lat >= south && lat <= north && lon >= west && lon <= east) return true
+  }
+  return false
+}
+
 // ─── External REST sources (AISHub, MarineTraffic, VesselFinder, Custom API) ───
 // Returns parsed vessels WITHOUT saving to DB.
-async function fetchExternalREST(source: TrackingSource) {
+async function fetchExternalREST(source: TrackingSource, missionBoundingBoxes?: number[][][]) {
   const url = source.api_url || (source.config as any)?.api_url
   if (!url) {
     await sql`UPDATE vessel_tracking_sources SET last_error = 'No API URL configured', updated_at = NOW() WHERE id = ${source.id}`
@@ -74,7 +88,12 @@ async function fetchExternalREST(source: TrackingSource) {
   }
 
   const rawData = await res.json()
-  const vessels = parseSourceResponse(source, rawData)
+  let vessels = parseSourceResponse(source, rawData)
+
+  // If mission bounding boxes are active, filter results to only include vessels within the drawn zones
+  if (missionBoundingBoxes && missionBoundingBoxes.length > 0) {
+    vessels = vessels.filter(v => isInBoundingBoxes(v.latitude, v.longitude, missionBoundingBoxes))
+  }
 
   await sql`UPDATE vessel_tracking_sources SET last_fetched_at = NOW(), last_error = NULL, vessel_count = ${vessels.length}, updated_at = NOW() WHERE id = ${source.id}`
 
@@ -83,7 +102,9 @@ async function fetchExternalREST(source: TrackingSource) {
 
 // ─── AIS Stream (WebSocket) ───
 // Returns parsed vessels WITHOUT saving to DB.
-async function fetchAISStream(source: TrackingSource) {
+// Accepts optional mission bounding boxes to filter by drawn watch zones,
+// and mission MMSIs from the watchlist for targeted tracking.
+async function fetchAISStream(source: TrackingSource, missionBoundingBoxes?: number[][][], missionMMSIs?: string[]) {
   try {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -92,7 +113,11 @@ async function fetchAISStream(source: TrackingSource) {
     const res = await fetch(`${baseUrl}/api/map/aisstream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source_id: source.id }),
+      body: JSON.stringify({
+        source_id: source.id,
+        ...(missionBoundingBoxes?.length ? { missionBoundingBoxes } : {}),
+        ...(missionMMSIs?.length ? { missionMMSIs } : {}),
+      }),
       signal: AbortSignal.timeout(90000),
     })
 

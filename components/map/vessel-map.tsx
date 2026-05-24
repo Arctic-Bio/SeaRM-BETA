@@ -6,6 +6,9 @@ import "leaflet/dist/leaflet.css"
 import type { VesselPosition } from "@/lib/map/types"
 import { categorizeShipType, SHIP_TYPE_CATEGORIES, NAV_STATUS_LABELS } from "@/lib/map/types"
 import { getWeatherProvider, type WeatherSource, type WeatherLayerDef, type RainViewerPaths } from "@/lib/map/weather-config"
+import type { WatchZone, WatchlistEntry, Anomaly, HotspotPoint } from "@/lib/map/mission-types"
+import { ANOMALY_META, SEVERITY_COLORS } from "@/lib/map/mission-types"
+import { matchesWatchlist } from "@/lib/map/anomaly-engine"
 
 // ─── Tile layer presets ───
 const TILE_LAYERS: Record<string, { url: string; attribution: string; label: string }> = {
@@ -44,6 +47,16 @@ interface VesselMapProps {
   weatherSources?: WeatherSource[]
   weatherOpacity?: number
   rainViewerPaths?: RainViewerPaths
+  // Mission overlays
+  watchZones?: WatchZone[]
+  watchlist?: WatchlistEntry[]
+  anomalies?: Anomaly[]
+  hotspots?: HotspotPoint[]
+  showZones?: boolean
+  showWatchlistHighlights?: boolean
+  showHeatmap?: boolean
+  isDrawingZone?: boolean
+  onZoneDrawn?: (bounds: { north: number; south: number; east: number; west: number }) => void
 }
 
 function vesselKey(v: VesselPosition) {
@@ -103,12 +116,21 @@ function buildPopup(v: VesselPosition): string {
         ${v.destination ? `<tr><td style="padding:2px 0;color:#64748b">Dest</td><td style="text-align:right">${v.destination}</td></tr>` : ""}
         ${v.callsign ? `<tr><td style="padding:2px 0;color:#64748b">Callsign</td><td style="text-align:right;font-family:monospace">${v.callsign}</td></tr>` : ""}
       </table>
-      <div style="margin-top:6px;font-size:10px;color:#475569">${v.source_name || "Unknown source"}</div>
+      <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:10px;color:#475569">
+        <span>${v.source_name || "Unknown source"}</span>
+        ${v.received_at ? `<span>${new Date(v.received_at).toLocaleTimeString()}</span>` : ""}
+      </div>
     </div>
   `
 }
 
-export default function VesselMap({ vessels, selectedVessel, onSelectVessel, tileLayer, showTrails, showLabels, weatherSources = [], weatherOpacity = 0.6, rainViewerPaths }: VesselMapProps) {
+export default function VesselMap({
+  vessels, selectedVessel, onSelectVessel, tileLayer, showTrails, showLabels,
+  weatherSources = [], weatherOpacity = 0.6, rainViewerPaths,
+  watchZones = [], watchlist = [], anomalies = [], hotspots = [],
+  showZones = true, showWatchlistHighlights = true, showHeatmap = false,
+  isDrawingZone = false, onZoneDrawn,
+}: VesselMapProps) {
   const mapRef = useRef<L.Map | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const markersRef = useRef<Map<string, L.Marker>>(new Map())
@@ -123,6 +145,14 @@ export default function VesselMap({ vessels, selectedVessel, onSelectVessel, til
   const rafId = useRef<number | null>(null)
   const onSelectRef = useRef(onSelectVessel)
   const weatherLayersRef = useRef<Map<string, L.TileLayer>>(new Map())
+  // Mission overlay refs
+  const zoneRectanglesRef = useRef<Map<string, L.Rectangle>>(new Map())
+  const watchlistRingsRef = useRef<Map<string, L.CircleMarker>>(new Map())
+  const anomalyMarkersRef = useRef<Map<string, L.CircleMarker>>(new Map())
+  const heatLayerRef = useRef<any>(null)
+  const drawStartRef = useRef<L.LatLng | null>(null)
+  const drawRectRef = useRef<L.Rectangle | null>(null)
+  const onZoneDrawnRef = useRef(onZoneDrawn)
 
   // Keep refs in sync
   vesselsRef.current = vessels
@@ -130,6 +160,7 @@ export default function VesselMap({ vessels, selectedVessel, onSelectVessel, til
   showTrailsRef.current = showTrails
   showLabelsRef.current = showLabels
   onSelectRef.current = onSelectVessel
+  onZoneDrawnRef.current = onZoneDrawn
 
   // ─── Core render function: only draw vessels visible in the current viewport ───
   const renderViewport = useCallback(() => {
@@ -195,10 +226,15 @@ export default function VesselMap({ vessels, selectedVessel, onSelectVessel, til
       if (existing) {
         existing.setLatLng([v.latitude, v.longitude])
         existing.setIcon(icon)
+        // Update popup content so it reflects latest vessel data
+        const popup = existing.getPopup()
+        if (popup) popup.setContent(buildPopup(v))
+        // Update click handler to reference latest vessel data
+        existing.off("click")
+        existing.on("click", () => onSelectRef.current(v))
       } else {
         const marker = L.marker([v.latitude, v.longitude], { icon, interactive: true })
-        const currentV = v // capture in closure
-        marker.on("click", () => onSelectRef.current(currentV))
+        marker.on("click", () => onSelectRef.current(v))
         marker.bindPopup(buildPopup(v), { className: "vessel-popup", maxWidth: 280 })
         marker.addTo(map)
         markersRef.current.set(key, marker)
@@ -367,6 +403,193 @@ export default function VesselMap({ vessels, selectedVessel, onSelectVessel, til
     })
   }, [weatherSources, weatherOpacity, rainViewerPaths])
 
+  // ─── Watch Zone Rectangles ───
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const desiredZones = new Set<string>()
+    if (showZones) {
+      for (const zone of watchZones) {
+        if (!zone.enabled) continue
+        desiredZones.add(zone.id)
+        const existing = zoneRectanglesRef.current.get(zone.id)
+        const bounds: L.LatLngBoundsExpression = [
+          [zone.bounds.south, zone.bounds.west],
+          [zone.bounds.north, zone.bounds.east],
+        ]
+        if (existing) {
+          existing.setBounds(bounds)
+          existing.setStyle({ color: zone.color, fillColor: zone.color })
+        } else {
+          const rect = L.rectangle(bounds, {
+            color: zone.color, weight: 2, opacity: 0.8,
+            fillColor: zone.color, fillOpacity: 0.1,
+            dashArray: "6,4", interactive: false,
+          }).addTo(map)
+          // Zone label
+          const center = [(zone.bounds.north + zone.bounds.south) / 2, (zone.bounds.east + zone.bounds.west) / 2] as [number, number]
+          const tooltip = L.tooltip({ permanent: true, direction: "center", className: "zone-label" })
+          tooltip.setContent(`<span style="color:${zone.color};font-size:10px;font-weight:700">${zone.name}</span>`)
+          tooltip.setLatLng(center)
+          tooltip.addTo(map)
+          ;(rect as any)._zoneTooltip = tooltip
+          zoneRectanglesRef.current.set(zone.id, rect)
+        }
+      }
+    }
+
+    // Remove zones that are no longer active
+    zoneRectanglesRef.current.forEach((rect, id) => {
+      if (!desiredZones.has(id)) {
+        if ((rect as any)._zoneTooltip) (rect as any)._zoneTooltip.remove()
+        rect.remove()
+        zoneRectanglesRef.current.delete(id)
+      }
+    })
+  }, [watchZones, showZones])
+
+  // ─── Watchlist Highlights (pulsing rings) ───
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    // Remove all existing rings
+    watchlistRingsRef.current.forEach(ring => ring.remove())
+    watchlistRingsRef.current.clear()
+
+    if (!showWatchlistHighlights || watchlist.length === 0) return
+
+    for (const v of vessels) {
+      const match = matchesWatchlist(v, watchlist)
+      if (!match) continue
+      const key = `wl-${v.mmsi || v.id}`
+      const ring = L.circleMarker([v.latitude, v.longitude], {
+        radius: 18, color: match.color, weight: 3, opacity: 0.8,
+        fillColor: match.color, fillOpacity: 0.15,
+        className: "watchlist-pulse",
+      }).addTo(map)
+      watchlistRingsRef.current.set(key, ring)
+    }
+  }, [vessels, watchlist, showWatchlistHighlights])
+
+  // ─── Anomaly Markers ───
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    // Remove old anomaly markers
+    anomalyMarkersRef.current.forEach(m => m.remove())
+    anomalyMarkersRef.current.clear()
+
+    // Show only unacknowledged anomalies (latest 50)
+    const visible = anomalies.filter(a => !a.acknowledged).slice(-50)
+    for (const a of visible) {
+      const meta = ANOMALY_META[a.type]
+      const marker = L.circleMarker([a.latitude, a.longitude], {
+        radius: 8, color: SEVERITY_COLORS[a.severity], weight: 2,
+        fillColor: meta.color, fillOpacity: 0.6,
+      }).addTo(map)
+      marker.bindPopup(`
+        <div style="font-family:system-ui;font-size:11px;color:#e2e8f0;min-width:160px">
+          <div style="font-weight:700;color:${meta.color};margin-bottom:2px">${meta.label}</div>
+          <div style="color:#94a3b8;margin-bottom:4px">${a.message}</div>
+          <div style="font-size:10px;color:#64748b">${new Date(a.timestamp).toLocaleTimeString()}</div>
+        </div>
+      `, { className: "vessel-popup", maxWidth: 240 })
+      anomalyMarkersRef.current.set(a.id, marker)
+    }
+  }, [anomalies])
+
+  // ─── Hotspot Heatmap ───
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    // Remove existing heatmap
+    if (heatLayerRef.current) {
+      map.removeLayer(heatLayerRef.current)
+      heatLayerRef.current = null
+    }
+
+    if (!showHeatmap || hotspots.length === 0) return
+
+    // Dynamically import leaflet.heat (no types available)
+    // @ts-ignore - leaflet.heat has no type declarations
+    import("leaflet.heat").then(() => {
+      const points: [number, number, number][] = hotspots.map(h => [
+        h.latitude, h.longitude, h.intensity,
+      ])
+      const heat = (L as any).heatLayer(points, {
+        radius: 25, blur: 15, maxZoom: 12,
+        gradient: { 0.2: "#3b82f6", 0.4: "#f59e0b", 0.6: "#f97316", 0.8: "#ef4444", 1.0: "#dc2626" },
+      })
+      heat.addTo(map)
+      heatLayerRef.current = heat
+    }).catch(() => {
+      // leaflet.heat not available -- skip silently
+    })
+  }, [hotspots, showHeatmap])
+
+  // ─── Zone Drawing Mode ───
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    if (!isDrawingZone) {
+      // Clean up any in-progress draw
+      if (drawRectRef.current) { drawRectRef.current.remove(); drawRectRef.current = null }
+      drawStartRef.current = null
+      map.getContainer().style.cursor = ""
+      return
+    }
+
+    map.getContainer().style.cursor = "crosshair"
+
+    const handleClick = (e: L.LeafletMouseEvent) => {
+      if (!drawStartRef.current) {
+        // First click: set start corner
+        drawStartRef.current = e.latlng
+        const corner: L.LatLngBoundsExpression = [[e.latlng.lat, e.latlng.lng], [e.latlng.lat, e.latlng.lng]]
+        drawRectRef.current = L.rectangle(
+          corner,
+          { color: "#3b82f6", weight: 2, dashArray: "6,4", fillOpacity: 0.15 },
+        ).addTo(map)
+      } else {
+        // Second click: finalize zone
+        const start = drawStartRef.current
+        const end = e.latlng
+        const bounds = {
+          north: Math.max(start.lat, end.lat),
+          south: Math.min(start.lat, end.lat),
+          east: Math.max(start.lng, end.lng),
+          west: Math.min(start.lng, end.lng),
+        }
+        if (drawRectRef.current) { drawRectRef.current.remove(); drawRectRef.current = null }
+        drawStartRef.current = null
+        map.getContainer().style.cursor = ""
+        onZoneDrawnRef.current?.(bounds)
+      }
+    }
+
+    const handleMouseMove = (e: L.LeafletMouseEvent) => {
+      if (drawStartRef.current && drawRectRef.current) {
+        const s = drawStartRef.current
+        const rectBounds: L.LatLngBoundsExpression = [[s.lat, s.lng], [e.latlng.lat, e.latlng.lng]]
+        drawRectRef.current.setBounds(rectBounds)
+      }
+    }
+
+    map.on("click", handleClick)
+    map.on("mousemove", handleMouseMove)
+
+    return () => {
+      map.off("click", handleClick)
+      map.off("mousemove", handleMouseMove)
+      map.getContainer().style.cursor = ""
+    }
+  }, [isDrawingZone])
+
   return (
     <>
       <div ref={containerRef} className="absolute inset-0 z-0" />
@@ -392,6 +615,10 @@ export default function VesselMap({ vessels, selectedVessel, onSelectVessel, til
         .leaflet-control-zoom a:hover { background: #334155 !important; }
         .leaflet-control-attribution { background: #0f172aCC !important; color: #64748b !important; font-size: 10px !important; }
         .leaflet-control-attribution a { color: #94a3b8 !important; }
+        .zone-label { background: #0f172acc !important; border: 1px solid #334155 !important; border-radius: 4px !important; padding: 2px 8px !important; box-shadow: none !important; }
+        .zone-label::before { display: none !important; }
+        @keyframes watchlist-pulse-anim { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
+        .watchlist-pulse { animation: watchlist-pulse-anim 2s ease-in-out infinite; }
       `}</style>
     </>
   )

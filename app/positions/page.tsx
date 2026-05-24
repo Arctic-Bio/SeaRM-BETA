@@ -30,8 +30,9 @@ import {
 } from "@/lib/db"
 import {
   Briefcase, Plus, Loader2, Wand2, X, UserCheck, UserX, Ship, Calendar, Star,
-  CheckCircle2, XCircle, Trash2,
+  CheckCircle2, XCircle, Trash2, DollarSign,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -51,6 +52,7 @@ export default function PositionsPage() {
     voyage_id: "", position_name: "", department: "", priority: "medium",
     min_skill_level: "Basic", notes: "",
     required_skills: [] as { skill: string; level: string }[],
+    is_paid: false, hourly_rate: "", daily_rate: "", estimated_hours: "",
   })
   const [newSkill, setNewSkill] = useState("")
   const [newSkillLevel, setNewSkillLevel] = useState("Basic")
@@ -66,6 +68,7 @@ export default function PositionsPage() {
 
   const openCount = (positions || []).filter((p: any) => p.status === "open" || p.status === "candidates_identified" || p.status === "interviewing").length
   const filledCount = (positions || []).filter((p: any) => p.status === "filled").length
+  const paidCount = (positions || []).filter((p: any) => p.is_paid).length
 
   const handleCreate = async () => {
     if (!form.voyage_id || !form.position_name) {
@@ -79,7 +82,7 @@ export default function PositionsPage() {
     })
     toast.success("Position created")
     setCreateOpen(false)
-    setForm({ voyage_id: "", position_name: "", department: "", priority: "medium", min_skill_level: "Basic", notes: "", required_skills: [] })
+    setForm({ voyage_id: "", position_name: "", department: "", priority: "medium", min_skill_level: "Basic", notes: "", required_skills: [], is_paid: false, hourly_rate: "", daily_rate: "", estimated_hours: "" })
     mutate()
   }
 
@@ -165,7 +168,7 @@ export default function PositionsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Total Positions</p>
@@ -182,6 +185,12 @@ export default function PositionsPage() {
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Filled</p>
             <p className="text-2xl font-bold text-success">{filledCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Paid Positions</p>
+            <p className="text-2xl font-bold text-chart-2">{paidCount}</p>
           </CardContent>
         </Card>
         <Card>
@@ -235,6 +244,7 @@ export default function PositionsPage() {
                   <TableHead className="text-xs">Priority</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs">Assigned To</TableHead>
+                  <TableHead className="text-xs">Pay</TableHead>
                   <TableHead className="text-xs">Required Skills</TableHead>
                   <TableHead className="text-xs text-right">Actions</TableHead>
                 </TableRow>
@@ -285,6 +295,23 @@ export default function PositionsPage() {
                         </Link>
                       ) : (
                         <span className="text-xs text-muted-foreground">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {pos.is_paid ? (
+                        <div className="flex flex-col gap-0.5">
+                          <Badge variant="outline" className="text-[10px] border-chart-2/40 text-chart-2 gap-0.5 w-fit">
+                            <DollarSign className="h-2.5 w-2.5" /> Paid
+                          </Badge>
+                          {Number(pos.hourly_rate) > 0 && (
+                            <span className="text-[10px] text-muted-foreground">${Number(pos.hourly_rate).toFixed(2)}/hr</span>
+                          )}
+                          {Number(pos.daily_rate) > 0 && (
+                            <span className="text-[10px] text-muted-foreground">${Number(pos.daily_rate).toFixed(2)}/day</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Volunteer</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -414,6 +441,33 @@ export default function PositionsPage() {
                       </button>
                     </Badge>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Paid position toggle */}
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-medium text-foreground">Paid Position</label>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Enable to set wages for this role</p>
+                </div>
+                <Switch checked={form.is_paid} onCheckedChange={(v) => setForm((f) => ({ ...f, is_paid: v }))} />
+              </div>
+              {form.is_paid && (
+                <div className="grid grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Hourly Rate ($)</label>
+                    <Input type="number" step="0.01" min="0" value={form.hourly_rate} onChange={(e) => setForm((f) => ({ ...f, hourly_rate: e.target.value }))} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Daily Rate ($)</label>
+                    <Input type="number" step="0.01" min="0" value={form.daily_rate} onChange={(e) => setForm((f) => ({ ...f, daily_rate: e.target.value }))} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Est. Hours</label>
+                    <Input type="number" step="1" min="0" value={form.estimated_hours} onChange={(e) => setForm((f) => ({ ...f, estimated_hours: e.target.value }))} placeholder="0" />
+                  </div>
                 </div>
               )}
             </div>

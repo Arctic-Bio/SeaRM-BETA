@@ -11,6 +11,8 @@ export async function GET(req: Request) {
     const search = searchParams.get("q")?.trim() || null
     const staleMinutes = parseInt(searchParams.get("stale_minutes") || "60")
     const limit = Math.min(parseInt(searchParams.get("limit") || "5000"), 10000)
+    // Mission bounding box filter: bbox=south,west,north,east (can repeat for multiple boxes)
+    const bboxParam = searchParams.getAll("bbox")
 
     // Get latest position per vessel (by mmsi or id), filtering out stale positions
     let positions
@@ -57,6 +59,18 @@ export async function GET(req: Request) {
         ORDER BY COALESCE(vp.mmsi, vp.id::text), vp.received_at DESC
         LIMIT ${limit}
       `
+    }
+
+    // Apply mission bounding box filter if provided
+    if (bboxParam.length > 0) {
+      const boxes = bboxParam.map(b => b.split(",").map(Number)).filter(b => b.length === 4 && b.every(n => !isNaN(n)))
+      if (boxes.length > 0) {
+        positions = positions.filter((p: any) => {
+          const lat = parseFloat(p.latitude)
+          const lon = parseFloat(p.longitude)
+          return boxes.some(([south, west, north, east]) => lat >= south && lat <= north && lon >= west && lon <= east)
+        })
+      }
     }
 
     return NextResponse.json({ positions, count: positions.length })

@@ -1,6 +1,21 @@
 # Deployment Guide for SeaRM
 
-This guide provides detailed instructions for deploying SeaRM to various platforms.
+SeaRM is a production-ready maritime crew management and operations platform built with Next.js 16, React 19, TypeScript, Tailwind CSS, and PostgreSQL. This guide provides detailed instructions for deploying SeaRM to various platforms.
+
+## Features Overview
+
+**Core Capabilities:**
+- 63-table PostgreSQL database with full maritime operations schema
+- Crew management with 15-skill rating system and applications pipeline
+- Fleet and voyage management with live vessel tracking and weather overlays
+- Document management with e-signatures and compliance tracking
+- Crew invoicing with automatic generation, hour tracking, and payment management
+- Email automation with templates and trigger-based sending
+- Widget builder for embeddable data views
+- Extensions system with event hooks and cron jobs
+- Advanced query builder and data export (18+ sources)
+- Interactive database schema visualization
+- Role-based access control with 4 permission tiers
 
 ## Table of Contents
 
@@ -9,6 +24,7 @@ This guide provides detailed instructions for deploying SeaRM to various platfor
 - [Self-Hosted: Linux/Ubuntu](#self-hosted-linuxubuntu)
 - [Database Setup](#database-setup)
 - [Post-Deployment Checklist](#post-deployment-checklist)
+- [Feature Activation](#feature-activation)
 
 ## Vercel (Recommended)
 
@@ -464,3 +480,138 @@ For deployment help:
 - Check the main [README.md](README.md)
 - Review [GitHub Issues](https://github.com/your-org/searm/issues)
 - Join [GitHub Discussions](https://github.com/your-org/searm/discussions)
+
+## Feature Activation Guide
+
+### Crew Invoicing System
+
+After deployment, enable crew invoicing:
+
+1. **Navigate to Admin Settings** → **Crew Settings** → **Invoice Settings**
+2. **Configure Invoice Numbering:**
+   - Set invoice prefix (e.g., "INV-2024-")
+   - Configure payment terms (due date offset in days)
+3. **Company Information:**
+   - Add company name, address, tax ID
+   - Upload logo for invoice templates
+   - Set footer text and payment instructions
+4. **Email Automation (Optional):**
+   - Enable "Email on Generate" to send invoices automatically
+   - Enable "Email on Payment" for payment receipts
+   - Configure email templates under Email Settings
+
+### Email System Setup
+
+1. **Navigate to Admin** → **Email** → **Providers**
+2. **Add Email Provider:**
+   - Choose SMTP provider (Gmail, SendGrid, etc.)
+   - Configure credentials (encrypted automatically)
+   - Test connection
+3. **Create Email Templates:**
+   - Go to **Email** → **Templates**
+   - Create templates for key events (invoices, applications, assignments)
+   - Use variables: `{crew_name}`, `{invoice_number}`, `{amount}`, etc.
+4. **Set Up Triggers:**
+   - Go to **Email** → **Triggers**
+   - Configure automated email sending on events
+
+### Extensions System Setup
+
+1. **Navigate to Admin** → **Extensions**
+2. **Browse Available Extensions:**
+   - Slack Notifier - Send alerts to Slack
+   - Document Expiry Monitor - Track expiring documents
+   - Weather Briefing - Daily weather briefings
+   - Onboarding Automator - Automated onboarding flows
+   - Maintenance Scheduler - Schedule maintenance tasks
+3. **Install Extension:**
+   - Click install and configure settings
+   - Grant necessary permissions
+   - Test with sample events
+4. **Monitor Activity:**
+   - View extension logs under each extension
+   - Check for errors or failures
+
+### Widget Builder Setup
+
+1. **Navigate to Integrations** → **Widgets**
+2. **Create New Widget:**
+   - Choose data source (crew list, voyages, assignments, etc.)
+   - Select view type (Table, Cards, List, Stats, Timeline, Minimal)
+   - Choose style preset (Modern, Ocean, Minimal, Vibrant, Corporate, Seafoam)
+   - Configure columns and filters
+3. **Generate Embed Code:**
+   - Click "Get Embed Code"
+   - Copy iframe or script tag
+   - Paste into external website
+4. **Manage Access:**
+   - Set per-widget access tokens
+   - Configure domain whitelist
+   - Monitor widget access logs
+
+### Live Vessel Map Configuration
+
+1. **Navigate to Map** (from sidebar)
+2. **Add Data Sources:**
+   - Click "Sources" panel
+   - Add AISHub, MarineTraffic, VesselFinder, or custom REST API
+   - Configure API keys for external providers
+3. **Configure Weather Overlays:**
+   - Click "Weather" panel
+   - Toggle layer providers (RainViewer, OpenWeatherMap, NOAA NEXRAD)
+   - Adjust opacity and refresh rates
+4. **Save Configuration:**
+   - Settings persist automatically
+   - Reload page to verify persistence
+
+### Database Schema Visualization
+
+1. **Navigate to How To** → **Data Flow Graph** (admin-only)
+2. **Interact with Graph:**
+   - Scroll to zoom in/out
+   - Click and drag nodes to reposition
+   - Click entity cards to expand and see all columns
+   - Hover relationships to highlight connections
+3. **Export Diagram:**
+   - Right-click canvas to save as image
+   - Use for documentation and team onboarding
+
+### Post-Setup Testing
+
+1. **Create test crew member**
+2. **Upload test CSV** (positions/hours)
+3. **Generate test invoice**
+4. **Send test email**
+5. **Verify webhook events** fire correctly
+6. **Check activity logs** for all operations
+
+## Performance Tuning
+
+### Database Optimization
+
+```sql
+-- Create recommended indexes
+CREATE INDEX idx_crew_assignments_crew_id ON crew_assignments(crew_id);
+CREATE INDEX idx_crew_assignments_voyage_id ON crew_assignments(voyage_id);
+CREATE INDEX idx_crew_invoices_crew_id ON crew_invoices(crew_id);
+CREATE INDEX idx_crew_invoices_status ON crew_invoices(status);
+CREATE INDEX idx_crew_hourly_logs_crew_id ON crew_hourly_logs(crew_id);
+CREATE INDEX idx_crew_hourly_logs_date ON crew_hourly_logs(date);
+CREATE INDEX idx_documents_crew_id ON documents(crew_id);
+CREATE INDEX idx_email_queue_status ON email_queue(status);
+```
+
+### Caching Strategy
+
+- Enable browser caching for static assets (24 hours)
+- Cache API responses with SWR (client-side caching)
+- Use Redis for session storage (if configured)
+- Cache widget data for 5-15 minutes depending on update frequency
+
+### Rate Limiting
+
+Consider implementing rate limits for:
+- Widget embed endpoints (100 req/min per token)
+- API endpoints (1000 req/min per user)
+- Email sending (50 emails/hour)
+- File uploads (10 MB/file, 100 MB/hour)

@@ -23,11 +23,13 @@ export async function GET(req: NextRequest) {
       SELECT cp.*,
         v.voyage_name, v.status as voyage_status, v.departure_date, v.return_date,
         s.name as ship_name,
-        ac.first_name as assigned_first_name, ac.last_name as assigned_last_name
+        ac.first_name as assigned_first_name, ac.last_name as assigned_last_name,
+        pc.position_name as pay_config_position, pc.hourly_rate as pay_config_hourly, pc.daily_rate as pay_config_daily
       FROM crew_positions cp
       LEFT JOIN voyages v ON v.id = cp.voyage_id
       LEFT JOIN ships s ON s.id = v.ship_id
       LEFT JOIN crew_applications ac ON ac.id = cp.assigned_crew_id
+      LEFT JOIN crew_pay_config pc ON pc.id = cp.pay_config_id
       ${where}
       ORDER BY
         CASE cp.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
@@ -44,11 +46,11 @@ export async function POST(req: NextRequest) {
   try {
     const sql = getDb()
     const body = await req.json()
-    const { voyage_id, position_name, department, required_skills, min_skill_level, priority, notes } = body
+    const { voyage_id, position_name, department, required_skills, min_skill_level, priority, notes, is_paid, hourly_rate, daily_rate, estimated_hours, pay_config_id } = body
 
     const result = await sql`
-      INSERT INTO crew_positions (voyage_id, position_name, department, required_skills, min_skill_level, priority, notes)
-      VALUES (${voyage_id}, ${position_name}, ${department || ''}, ${JSON.stringify(required_skills || [])}, ${min_skill_level || 'Basic'}, ${priority || 'medium'}, ${notes || ''})
+      INSERT INTO crew_positions (voyage_id, position_name, department, required_skills, min_skill_level, priority, notes, is_paid, hourly_rate, daily_rate, estimated_hours, pay_config_id)
+      VALUES (${voyage_id}, ${position_name}, ${department || ''}, ${JSON.stringify(required_skills || [])}, ${min_skill_level || 'Basic'}, ${priority || 'medium'}, ${notes || ''}, ${is_paid || false}, ${hourly_rate || 0}, ${daily_rate || 0}, ${estimated_hours || 0}, ${pay_config_id || null})
       RETURNING *
     `
     return NextResponse.json(result[0], { status: 201 })

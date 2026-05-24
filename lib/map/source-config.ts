@@ -49,17 +49,17 @@ export const SOURCE_TYPES: SourceTypeInfo[] = [
   {
     value: "aisstream",
     label: "AIS Stream (WebSocket)",
-    description: "Real-time global AIS data via WebSocket from aisstream.io. Streams PositionReports, ShipStaticData, and more. Backend-only connection (CORS blocked by design). Free API key required.",
+    description: "Real-time global AIS data via WebSocket from aisstream.io. Streams Class A (cargo/tanker) and Class B (fishing/pleasure/small craft) position reports plus static data. Free API key required.",
     color: "#8b5cf6",
     docs_url: "https://aisstream.io/documentation",
     response_format: "WebSocket JSON messages (MessageType + MetaData + Message)",
     fields: [
       { key: "api_key", label: "API Key", type: "password", required: true, placeholder: "Your aisstream.io API key", description: "Sign in at aisstream.io to generate a free API key" },
       { key: "ws_url", label: "WebSocket URL", type: "url", required: false, placeholder: "wss://stream.aisstream.io/v0/stream", default: "wss://stream.aisstream.io/v0/stream", description: "AIS Stream WebSocket endpoint (default is correct for most users)" },
-      { key: "bounding_boxes", label: "Bounding Boxes (JSON)", type: "text", required: true, placeholder: "[[[-90,-180],[90,180]]]", default: "[[[-90,-180],[90,180]]]", description: "JSON array of bounding boxes: [[[lat1,lon1],[lat2,lon2]],...]  World = [[[-90,-180],[90,180]]]" },
+      { key: "bounding_boxes", label: "Bounding Boxes (JSON)", type: "text", required: false, placeholder: "[[[25,-80],[45,-60]]]", description: "JSON array of bounding boxes: [[[lat_min,lon_min],[lat_max,lon_max]],...]. Leave blank if using mission watch zones. Do NOT use world-wide [[-90,-180],[90,180]] as it loads 17K+ vessels." },
       { key: "filter_mmsi", label: "MMSI Filter (optional)", type: "text", placeholder: "368207620,367719770", description: "Comma-separated MMSIs to track (max 50). Leave blank for all vessels in the bounding boxes." },
-      { key: "filter_message_types", label: "Message Type Filter", type: "text", default: "PositionReport", placeholder: "PositionReport,ShipStaticData", description: "Comma-separated AIS message types: PositionReport, ShipStaticData, StandardClassBPositionReport, ExtendedClassBPositionReport, etc." },
-      { key: "collect_seconds", label: "Collection Window (seconds)", type: "number", default: 15, placeholder: "15", description: "How many seconds to keep the WebSocket open per fetch cycle (5-60). Longer = more vessels but slower refresh." },
+      { key: "filter_message_types", label: "Message Type Filter", type: "text", default: "PositionReport,StandardClassBPositionReport,ExtendedClassBPositionReport,ShipStaticData", placeholder: "PositionReport,StandardClassBPositionReport,ShipStaticData", description: "Comma-separated AIS types. Class A = PositionReport, Class B (fishing/small) = StandardClassBPositionReport + ExtendedClassBPositionReport, Static = ShipStaticData + StaticDataReport." },
+      { key: "collect_seconds", label: "Collection Window (seconds)", type: "number", default: 8, placeholder: "8", description: "How many seconds to keep the WebSocket open per fetch cycle (3-30). Shorter = faster but fewer vessels." },
     ],
   },
   {

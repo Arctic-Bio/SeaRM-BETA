@@ -118,23 +118,60 @@ export const NAV_STATUS_LABELS: Record<string, string> = {
 }
 
 // Ship type categories
-export const SHIP_TYPE_CATEGORIES: Record<string, { label: string; color: string }> = {
-  cargo: { label: "Cargo", color: "#22c55e" },
-  tanker: { label: "Tanker", color: "#ef4444" },
-  passenger: { label: "Passenger", color: "#3b82f6" },
-  fishing: { label: "Fishing", color: "#f59e0b" },
-  tug: { label: "Tug", color: "#8b5cf6" },
-  military: { label: "Military", color: "#64748b" },
-  sailing: { label: "Sailing", color: "#06b6d4" },
-  pleasure: { label: "Pleasure Craft", color: "#ec4899" },
-  sar: { label: "Search & Rescue", color: "#f97316" },
-  law_enforcement: { label: "Law Enforcement", color: "#1e40af" },
-  other: { label: "Other", color: "#94a3b8" },
-  unknown: { label: "Unknown", color: "#6b7280" },
+export const SHIP_TYPE_CATEGORIES: Record<string, { label: string; color: string; aisRange?: string }> = {
+  cargo:           { label: "Cargo",            color: "#22c55e", aisRange: "70-79" },
+  tanker:          { label: "Tanker",           color: "#ef4444", aisRange: "80-89" },
+  passenger:       { label: "Passenger",        color: "#3b82f6", aisRange: "60-69" },
+  fishing:         { label: "Fishing",          color: "#f59e0b", aisRange: "30" },
+  tug:             { label: "Tug/Supply",       color: "#8b5cf6", aisRange: "31-32, 52" },
+  military:        { label: "Military",         color: "#64748b", aisRange: "35" },
+  sailing:         { label: "Sailing",          color: "#06b6d4", aisRange: "36" },
+  pleasure:        { label: "Pleasure Craft",   color: "#ec4899", aisRange: "37" },
+  sar:             { label: "Search & Rescue",  color: "#f97316", aisRange: "51" },
+  law_enforcement: { label: "Law Enforcement",  color: "#1e40af", aisRange: "55" },
+  pilot:           { label: "Pilot Vessel",     color: "#14b8a6", aisRange: "50" },
+  hsc:             { label: "High Speed Craft", color: "#a855f7", aisRange: "40-49" },
+  wig:             { label: "Wing In Ground",   color: "#84cc16", aisRange: "20-29" },
+  dredger:         { label: "Dredger",          color: "#78716c", aisRange: "33" },
+  diving:          { label: "Diving Ops",       color: "#0ea5e9", aisRange: "34" },
+  port_tender:     { label: "Port Tender",      color: "#d946ef", aisRange: "53" },
+  medical:         { label: "Medical",          color: "#dc2626", aisRange: "58" },
+  other:           { label: "Other",            color: "#94a3b8", aisRange: "90-99" },
+  unknown:         { label: "Unknown",          color: "#6b7280" },
+}
+
+// AIS numeric ship type ranges per ITU-R M.1371-5:
+//   20-29: Wing In Ground, 30-39: Special (fishing=30, tug=31-32, dredging=33, diving=34, military=35, sailing=36),
+//   40-49: High Speed Craft, 50-59: Pilot/SAR/Tow/Port Tender (50=pilot, 51=SAR, 52=tug, 53=port tender, 55=law enforcement),
+//   60-69: Passenger, 70-79: Cargo, 80-89: Tanker, 90-99: Other
+function categorizeByAISCode(code: number): string {
+  if (code === 30) return "fishing"
+  if (code === 31 || code === 32 || code === 52) return "tug"
+  if (code === 33) return "dredger"
+  if (code === 34) return "diving"
+  if (code === 35) return "military"
+  if (code === 36) return "sailing"
+  if (code === 37) return "pleasure"
+  if (code === 50) return "pilot"
+  if (code === 51) return "sar"
+  if (code === 53) return "port_tender"
+  if (code === 55) return "law_enforcement"
+  if (code === 58) return "medical"
+  if (code >= 20 && code <= 29) return "wig"
+  if (code >= 40 && code <= 49) return "hsc"
+  if (code >= 60 && code <= 69) return "passenger"
+  if (code >= 70 && code <= 79) return "cargo"
+  if (code >= 80 && code <= 89) return "tanker"
+  if (code >= 90 && code <= 99) return "other"
+  return "unknown"
 }
 
 export function categorizeShipType(raw?: string | null): string {
   if (!raw) return "unknown"
+  // Try numeric AIS code first (AISstream sends "70", "30", etc.)
+  const num = parseInt(raw, 10)
+  if (!isNaN(num) && num >= 0) return categorizeByAISCode(num)
+  // Fall back to text matching
   const lower = raw.toLowerCase()
   if (/cargo|container|bulk|general cargo|vehicle carrier|roro/i.test(lower)) return "cargo"
   if (/tanker|oil|chemical|lng|lpg|gas carrier/i.test(lower)) return "tanker"
@@ -146,5 +183,9 @@ export function categorizeShipType(raw?: string | null): string {
   if (/pleasure|yacht|recreational/i.test(lower)) return "pleasure"
   if (/search|rescue|sar/i.test(lower)) return "sar"
   if (/law|enforcement|police/i.test(lower)) return "law_enforcement"
+  if (/dredg/i.test(lower)) return "dredger"
+  if (/diving/i.test(lower)) return "diving"
+  if (/medical|hospital/i.test(lower)) return "medical"
+  if (/high.?speed|hsc/i.test(lower)) return "hsc"
   return "other"
 }

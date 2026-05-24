@@ -36,6 +36,7 @@
 - [Data Export](#data-export)
 - [Email System](#email-system)
 - [Authentication & Roles](#authentication--roles)
+- [Single Sign-On (SSO)](#single-sign-on-sso)
 - [Deployment](#deployment)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
@@ -51,14 +52,18 @@ SeaRM (Sea Resource Manager) is a comprehensive, production-ready platform purpo
 **Key differentiators:**
 
 - **Full-stack Next.js 16** with App Router, React 19, and Tailwind CSS 4
-- **33-table PostgreSQL schema** covering every aspect of maritime operations
+- **63-table PostgreSQL schema** covering every aspect of maritime operations and crew invoicing
 - **Widget Builder** for creating embeddable, styled data views for external websites
 - **Extensions System** with event hooks, cron jobs, and 5 pre-made automations
 - **Role-based access** with 4 tiers: Sysadmin, Admin, Coordinator, Crew
 - **Crew Portal** for self-service document uploads, e-signatures, and onboarding tracking
 - **Email Automation** with template engine, trigger-based sending, and queue management
-- **Data Export** supporting 18+ data sources in CSV or JSON with batch downloads
+- **Data Export** supporting 18+ data sources (all 63 tables) in CSV or JSON with batch downloads
 - **Custom Query Builder** for ad-hoc data exploration with visual SQL composition
+- **Crew Invoicing System** with CSV import, hour tracking, automatic invoice generation, and payment management
+- **Interactive Database Schema Visualization** showing all entities, relationships, and columns with draggable nodes
+- **Live Vessel Map** with multi-source tracking, weather overlays, and comprehensive filtering
+- **Enterprise SSO** with OAuth2 and SAML2 support for seamless enterprise authentication
 
 ---
 
@@ -152,11 +157,12 @@ SeaRM (Sea Resource Manager) is a comprehensive, production-ready platform purpo
 | Feature | Description |
 |---|---|
 | **Custom Query Builder** | Visual SQL composer with table joins, filters (AND/OR), comparisons, and saved queries |
-| **Data Export** | Export 18+ data sources (all 33 database tables) in CSV or JSON with batch downloads |
+| **Data Export** | Export 18+ data sources (all 63 database tables) in CSV or JSON with batch downloads |
 | **User Management** | Create, edit, and deactivate user accounts with role assignment |
 | **Site Settings** | Global configuration for required documents, feature flags, and system behavior |
 | **Activity Log** | System-wide audit trail of all user and system actions |
 | **Global Search** | Cross-entity search across crew, ships, voyages, and tasks |
+| **Database Schema Visualization** | Advanced interactive ERD showing all entities, columns, data types, and foreign key relationships with color-coded categories (admin-only) |
 
 ### Crew Portal
 | Feature | Description |
@@ -167,7 +173,19 @@ SeaRM (Sea Resource Manager) is a comprehensive, production-ready platform purpo
 | **Onboarding Timeline** | Visual progress tracker for onboarding completion |
 | **Mobile-Responsive** | Full mobile support for crew on vessels |
 
----
+### Crew Management & Invoicing (Advanced)
+| Feature | Description |
+|---|---|
+| **CSV Position Upload** | Bulk crew position import with validation, duplicate detection, and error reporting |
+| **Hour Tracking** | Log and track crew working hours with verification workflow and rate assignment |
+| **Automatic Invoice Generation** | Generate invoices from assignments, hours, and custom line items |
+| **Invoice Management** | Draft, issue, paid, and cancelled statuses with full audit trail |
+| **Pay Configuration** | Set hourly/daily rates per position type with volunteer vs. paid options |
+| **Invoice Settings** | Configurable numbering, payment terms, company info, templates, and email automation |
+| **Hour Verification** | Manager/admin approval workflow with optional rate adjustments |
+| **CSV Upload Audit** | Track all uploads with status, error details, and retry capability |
+
+
 
 ## Architecture
 
@@ -338,7 +356,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 ## Database Schema
 
-SeaRM uses **33 PostgreSQL tables** organized into 6 domains:
+SeaRM uses **63 PostgreSQL tables** organized into 9 domains:
 
 ### Core Entities
 | Table | Purpose |
@@ -357,6 +375,8 @@ SeaRM uses **33 PostgreSQL tables** organized into 6 domains:
 | `crew_checkins` | Periodic check-in logs |
 | `crew_tags` | Custom crew categorization tags |
 | `onboarding_checklists` | Onboarding progress tracking |
+| `crew_pay_config` | Position type payment settings and rates |
+| `crew_hourly_logs` | Hour tracking with verification workflow |
 
 ### Fleet Management
 | Table | Purpose |
@@ -373,6 +393,52 @@ SeaRM uses **33 PostgreSQL tables** organized into 6 domains:
 | `file_storage` | File binary storage references |
 | `signature_audit_log` | E-signature event audit trail |
 | `site_settings` | Global configuration and feature flags |
+
+### Invoicing & Payments
+| Table | Purpose |
+|---|---|
+| `crew_invoices` | Invoice master records with status tracking |
+| `invoice_line_items` | Detailed invoice line items |
+| `invoice_settings` | Invoice numbering, templates, and configuration |
+| `csv_uploads` | CSV upload tracking and audit trail |
+
+### Email System
+| Table | Purpose |
+|---|---|
+| `email_providers` | SMTP provider configuration (encrypted) |
+| `email_templates` | Email templates with variable interpolation |
+| `email_triggers` | Trigger rules for automated sending |
+| `email_queue` | Queued emails with delivery status |
+
+### Extensions & Integrations
+| Table | Purpose |
+|---|---|
+| `extensions` | Installed extensions with configuration |
+| `extension_hooks` | Event hook subscriptions |
+| `extension_logs` | Extension execution logs and errors |
+| `extension_configs` | Per-extension configuration storage |
+| `integrations` | Third-party integrations (Slack, Webhook, etc) |
+| `integration_syncs` | Integration sync history and status |
+| `integration_logs` | Integration execution logs |
+
+### Widgets & Reporting
+| Table | Purpose |
+|---|---|
+| `widgets` | Embeddable widgets with configuration |
+| `widget_access_tokens` | Per-widget API access tokens |
+| `widget_access_log` | Widget embed request audit trail |
+
+### System & Audit
+| Table | Purpose |
+|---|---|
+| `activity_log` | System-wide user and system action audit trail |
+| `organizations` | Multi-org support (if enabled) |
+| `custom_fields` | Custom field definitions per resource type |
+| `custom_field_values` | Custom field values per record |
+| `backup_restores` | Backup/restore operation tracking |
+| `tool_saved_queries` | Saved custom query builder queries |
+
+
 
 ### Email System
 | Table | Purpose |
@@ -715,7 +781,46 @@ SeaRM uses custom JWT authentication with bcrypt password hashing.
 
 ---
 
-## Deployment
+## Single Sign-On (SSO)
+
+SeaRM supports enterprise-grade Single Sign-On authentication with OAuth2 and SAML2 providers.
+
+### Supported Providers
+
+**OAuth2:**
+- Google
+- GitHub
+- Microsoft
+- Apple
+- Any OIDC-compatible provider
+
+**SAML2:**
+- Okta
+- Azure AD
+- OneLogin
+- Any SAML2-compatible IdP
+
+### Features
+
+- **BYO (Bring Your Own)** - Configure your own providers
+- **Account Linking** - Users can link/unlink SSO accounts to existing accounts
+- **Auto-Linking** - Optional automatic account linking by email domain
+- **Encrypted Storage** - All tokens encrypted at rest using AES-256
+- **Audit Trail** - Complete event logging for compliance (GDPR, SOC2)
+- **Multiple Providers** - Users can link multiple SSO providers
+- **Admin Dashboard** - Manage providers, view audit logs, test connections
+- **User Dashboard** - Users can manage their linked accounts
+
+### Quick Setup
+
+1. **Admin**: Settings → Authentication → SSO Providers
+2. **Add Provider**: OAuth2 or SAML2 (provide credentials from your IdP)
+3. **Activate**: Toggle "Active" to enable
+4. **Users**: Profile → Security → Linked Accounts → Link
+
+See [SSO_GUIDE.md](docs/SSO_GUIDE.md) for complete configuration instructions.
+
+---
 
 ### Vercel (Recommended)
 

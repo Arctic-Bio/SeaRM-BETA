@@ -48,9 +48,11 @@ function ConfigFields({ typeInfo, config, onChange }: { typeInfo: ReturnType<typ
 
 interface SourcePanelProps {
   onPassthroughVessels?: (vessels: any[], sourceName: string) => void
-}
-
-export default function SourcePanel({ onPassthroughVessels }: SourcePanelProps) {
+  missionBoundingBoxes?: number[][][]
+  missionMMSIs?: string[]
+  }
+  
+export default function SourcePanel({ onPassthroughVessels, missionBoundingBoxes, missionMMSIs }: SourcePanelProps) {
   const { data: sources = [], mutate } = useSWR<TrackingSource[]>("/api/map/sources", fetcher, { refreshInterval: 10000 })
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -155,11 +157,16 @@ export default function SourcePanel({ onPassthroughVessels }: SourcePanelProps) 
 
   const fetchNow = async (src: TrackingSource) => {
     setFetching(src.id)
+    const payload = {
+      source_id: src.id,
+      ...(missionBoundingBoxes?.length ? { missionBoundingBoxes } : {}),
+      ...(src.source_type === "aisstream" && missionMMSIs?.length ? { missionMMSIs } : {}),
+    }
     try {
       const res = await fetch("/api/map/fetch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_id: src.id }),
+        body: JSON.stringify(payload),
       })
       const result = await res.json()
       mutate()

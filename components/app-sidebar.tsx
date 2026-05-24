@@ -7,7 +7,8 @@ import {
   LayoutDashboard, Upload, Users, ChevronLeft, ChevronRight,
   Ship, Navigation, CheckSquare, Kanban, Briefcase, Map, Download,
   AlertTriangle, ClipboardList, Calendar, Shield, LogOut, Settings,
-  Wrench, BookOpen, Mail, Puzzle, Plug,
+  Wrench, BookOpen, Mail, Puzzle, Plug, Lock,
+  Receipt, DatabaseBackup, Settings2, Bell, FileUp,
 } from "lucide-react"
 import { useState, useCallback } from "react"
 import useSWR from "swr"
@@ -17,51 +18,63 @@ import { Button } from "@/components/ui/button"
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { PERMISSIONS } from "@/lib/rbac/permissions"
 
 const navSections = [
   {
     label: "Overview",
     items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard, settingsKey: "page_dashboard" },
-      { href: "/pipeline", label: "Pipeline", icon: Kanban, settingsKey: "page_pipeline" },
+      { href: "/", label: "Dashboard", icon: LayoutDashboard, settingsKey: "page_dashboard", permission: PERMISSIONS.DASHBOARD.VIEW },
+      { href: "/pipeline", label: "Pipeline", icon: Kanban, settingsKey: "page_pipeline", permission: PERMISSIONS.DASHBOARD.VIEW },
     ],
   },
   {
     label: "Crew",
     items: [
-      { href: "/crew", label: "Applications", icon: Users, settingsKey: "page_crew" },
-      { href: "/positions", label: "Positions", icon: Briefcase, settingsKey: "page_crew" },
-      { href: "/upload", label: "Upload CSV", icon: Upload, settingsKey: "page_crew" },
-      { href: "/tasks", label: "Tasks", icon: CheckSquare, settingsKey: "page_tasks" },
+      { href: "/crew", label: "Applications", icon: Users, settingsKey: "page_crew", permission: PERMISSIONS.CREW.VIEW },
+      { href: "/positions", label: "Positions", icon: Briefcase, settingsKey: "page_crew", permission: PERMISSIONS.CREW.VIEW },
+      { href: "/upload", label: "Upload CSV", icon: Upload, settingsKey: "page_crew", permission: PERMISSIONS.UPLOAD.CSV },
+      { href: "/tasks", label: "Tasks", icon: CheckSquare, settingsKey: "page_tasks", permission: PERMISSIONS.TASKS.VIEW },
     ],
   },
   {
     label: "Fleet & Campaigns",
     items: [
-      { href: "/ships", label: "Ships", icon: Ship, settingsKey: "page_ships" },
-      { href: "/voyages", label: "Campaigns", icon: Map, settingsKey: "page_voyages" },
-      { href: "/map", label: "Live Map", icon: Navigation, settingsKey: null },
-      { href: "/availability", label: "Crew Calendar", icon: Calendar, settingsKey: "page_availability" },
+      { href: "/ships", label: "Ships", icon: Ship, settingsKey: "page_ships", permission: PERMISSIONS.SHIPS.VIEW },
+      { href: "/voyages", label: "Campaigns", icon: Map, settingsKey: "page_voyages", permission: PERMISSIONS.CAMPAIGNS.VIEW },
+      { href: "/map", label: "Live Map", icon: Navigation, settingsKey: null, permission: PERMISSIONS.MAP.VIEW },
+      { href: "/availability", label: "Crew Calendar", icon: Calendar, settingsKey: "page_availability", permission: PERMISSIONS.AVAILABILITY.VIEW },
     ],
   },
     {
     label: "Operations",
     items: [
-      { href: "/onboarding", label: "Onboarding", icon: ClipboardList, settingsKey: "page_onboarding" },
-      { href: "/incidents", label: "Incidents", icon: AlertTriangle, settingsKey: "page_incidents" },
-      { href: "/tools", label: "Custom Tools", icon: Wrench, settingsKey: "page_tools" },
+      { href: "/onboarding", label: "Onboarding", icon: ClipboardList, settingsKey: "page_onboarding", permission: PERMISSIONS.DASHBOARD.VIEW },
+      { href: "/incidents", label: "Incidents", icon: AlertTriangle, settingsKey: "page_incidents", permission: PERMISSIONS.DASHBOARD.VIEW },
+      { href: "/tools", label: "Custom Tools", icon: Wrench, settingsKey: "page_tools", permission: PERMISSIONS.TOOLS.VIEW },
+    ],
+  },
+  {
+    label: "Billing",
+    items: [
+      { href: "/invoices", label: "Invoices", icon: Receipt, settingsKey: null, permission: PERMISSIONS.BILLING.VIEW },
     ],
   },
   {
     label: "Admin",
     items: [
-      { href: "/users", label: "Users & Roles", icon: Shield, settingsKey: "page_users", sysadminOnly: true },
-      { href: "/email", label: "Email Automation", icon: Mail, settingsKey: null, sysadminOnly: true },
-      { href: "/integrations", label: "Widget Builder", icon: Plug, settingsKey: null, sysadminOnly: true },
-      { href: "/extensions", label: "Extensions", icon: Puzzle, settingsKey: null, sysadminOnly: true },
-      { href: "/settings", label: "Settings", icon: Settings, settingsKey: null, sysadminOnly: true },
-      { href: "/export", label: "Export Data", icon: Download, settingsKey: "page_export" },
-      { href: "/how-to", label: "How to Use", icon: BookOpen, settingsKey: null },
+      { href: "/users", label: "Users & Roles", icon: Shield, settingsKey: "page_users", sysadminOnly: true, permission: PERMISSIONS.USERS.VIEW },
+      { href: "/admin/roles", label: "Role Manager", icon: Lock, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.ROLES.VIEW },
+      { href: "/email", label: "Email Automation", icon: Mail, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
+      { href: "/integrations", label: "Widget Builder", icon: Plug, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
+      { href: "/extensions", label: "Extensions", icon: Puzzle, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
+      { href: "/settings", label: "Settings", icon: Settings, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
+      { href: "/export", label: "Export Data", icon: Download, settingsKey: "page_export", permission: PERMISSIONS.REPORTS.EXPORT },
+      { href: "/backup", label: "Backup Data", icon: DatabaseBackup, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.BACKUP.VIEW },
+      { href: "/custom-fields", label: "Custom Fields", icon: Settings2, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.CUSTOM_FIELDS.VIEW },
+      { href: "/notifications", label: "Notifications", icon: Bell, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.NOTIFICATIONS.VIEW },
+      { href: "/import", label: "Import Data", icon: FileUp, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.IMPORT.VIEW },
+      { href: "/how-to", label: "How to Use", icon: BookOpen, settingsKey: null, permission: PERMISSIONS.HOWTO.VIEW },
     ],
   },
 ] as const
@@ -69,7 +82,7 @@ const navSections = [
 export function AppSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const router = useRouter()
   const sfetcher = (url: string) => fetch(url).then((r) => r.json())
   const { data: siteSettings } = useSWR("/api/settings", sfetcher, { revalidateOnFocus: false })
@@ -116,7 +129,10 @@ export function AppSidebar() {
           {navSections.map((section) => {
             const visibleItems = section.items.filter((item) => {
               if ("sysadminOnly" in item && item.sysadminOnly && user?.role !== "sysadmin") return false
-              return isPageEnabled("settingsKey" in item ? item.settingsKey as string | null : null)
+              if (!isPageEnabled("settingsKey" in item ? item.settingsKey as string | null : null)) return false
+              // Check permission if defined
+              if ("permission" in item && item.permission && !hasPermission(item.permission)) return false
+              return true
             })
             if (visibleItems.length === 0) return null
             return (

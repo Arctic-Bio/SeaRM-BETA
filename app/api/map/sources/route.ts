@@ -86,7 +86,6 @@ export async function PUT(req: Request) {
     if (rows.length === 0) return NextResponse.json({ error: "Source not found" }, { status: 404 })
     return NextResponse.json(rows[0])
   } catch (e: any) {
-    console.error("[v0] PUT /api/map/sources error:", e.message)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }

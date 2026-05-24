@@ -84,51 +84,124 @@ const parseVesselFinder: Parser = (_source, raw) => {
 }
 
 // AIS Stream WebSocket messages -- normalized from the batch collected by /api/map/aisstream.
-// Each raw message follows the aisstream.io documented format:
+// Follows the official aisstream.io API documentation format:
 // {
-//   MessageType: "PositionReport" | "ShipStaticData" | "StandardClassBPositionReport" | ...,
-//   MetaData: { MMSI, ShipName, latitude, longitude, time_utc },
+//   MessageType: "PositionReport" | "StandardClassBPositionReport" | "ExtendedClassBPositionReport" |
+//                "ShipStaticData" | "StaticDataReport" | "BaseStationReport" |
+//                "AidsToNavigationReport" | "LongRangeAisBroadcastMessage" | ...
+//   MetaData: { MMSI: number, ShipName: string, latitude: number, longitude: number, time_utc: string }
 //   Message: { [MessageType]: { UserID, Latitude, Longitude, Cog, Sog, TrueHeading, NavigationalStatus, ... } }
 // }
+//
+// Key field differences by message type:
+// - PositionReport (msg 1/2/3):        Latitude, Longitude, Cog, Sog, TrueHeading, NavigationalStatus, RateOfTurn, Timestamp
+// - StandardClassBPositionReport (18):  Latitude, Longitude, Cog, Sog, TrueHeading (NO NavigationalStatus, NO RateOfTurn)
+// - ExtendedClassBPositionReport (19):  Latitude, Longitude, Cog, Sog, TrueHeading, Name, ShipType
+// - ShipStaticData (msg 5):            ImoNumber, CallSign, Name, Type, Dimension{A,B,C,D}, Destination, Eta, MaximumStaticDraught
+// - StaticDataReport (msg 24):         PartNumber, Name, ShipType, CallSign, Dimension{A,B,C,D}
+// - BaseStationReport (msg 4):         Latitude, Longitude (base station / VTS position)
+// - LongRangeAisBroadcastMessage (27): Latitude, Longitude, Cog, Sog, NavigationalStatus (coarse position)
+// - AidsToNavigationReport (msg 21):   Latitude, Longitude, Name, Type (buoys, lighthouses)
+
+const POSITION_MSG_TYPES = new Set([
+  "PositionReport",
+  "StandardClassBPositionReport",
+  "ExtendedClassBPositionReport",
+  "BaseStationReport",
+  "LongRangeAisBroadcastMessage",
+  "AidsToNavigationReport",
+  "StandardSearchAndRescueAircraftReport",
+])
+
+const STATIC_MSG_TYPES = new Set([
+  "ShipStaticData",
+  "StaticDataReport",
+])
+
 const parseAISStream: Parser = (_source, raw) => {
   const arr = Array.isArray(raw) ? raw : raw?.messages || raw?.data || []
   const vesselMap = new Map<string, ParsedVessel>()
 
   for (const msg of arr) {
     const msgType = msg.MessageType || ""
-    const meta = msg.MetaData || {}
+    // Handle both MetaData and Metadata (docs show both)
+    const meta = msg.MetaData || msg.Metadata || {}
     const body = msg.Message?.[msgType] || {}
 
     const mmsi = String(meta.MMSI || body.UserID || "")
     if (!mmsi) continue
 
-    // Extract position -- priority: body fields > meta fields
-    const lat = body.Latitude ?? meta.latitude ?? null
-    const lon = body.Longitude ?? meta.longitude ?? null
-
-    // For non-position message types (like ShipStaticData), use metadata lat/lon
-    const latitude = lat != null ? parseFloat(lat) : (meta.latitude != null ? parseFloat(meta.latitude) : 0)
-    const longitude = lon != null ? parseFloat(lon) : (meta.longitude != null ? parseFloat(meta.longitude) : 0)
-    if (!latitude && !longitude) continue
-
-    // Build vessel data -- merge with existing if we have multiple messages for same MMSI
+    // Get existing vessel data for merging (multiple msgs for same MMSI)
     const existing = vesselMap.get(mmsi)
 
-    // Extract ship static data if this is a ShipStaticData message
-    const shipName = meta.ShipName?.trim() || body.Name?.trim() || existing?.vessel_name || undefined
-    const shipType = body.Type != null ? String(body.Type) : (body.ShipType != null ? String(body.ShipType) : existing?.ship_type)
+    // ─── Position Extraction ───
+    // Body fields take priority over MetaData for position messages
+    // For static-only messages (ShipStaticData), use MetaData lat/lon
+    let latitude: number
+    let longitude: number
+
+    if (POSITION_MSG_TYPES.has(msgType)) {
+      // Position message -- use body's Latitude/Longitude (high precision)
+      latitude = body.Latitude != null ? parseFloat(body.Latitude) : (meta.latitude != null ? parseFloat(meta.latitude) : (existing?.latitude || 0))
+      longitude = body.Longitude != null ? parseFloat(body.Longitude) : (meta.longitude != null ? parseFloat(meta.longitude) : (existing?.longitude || 0))
+    } else {
+      // Static data message -- use MetaData position (last known) or existing
+      latitude = meta.latitude != null ? parseFloat(meta.latitude) : (existing?.latitude || 0)
+      longitude = meta.longitude != null ? parseFloat(meta.longitude) : (existing?.longitude || 0)
+    }
+
+    if (!latitude && !longitude) continue
+
+    // ─── Dynamic Data (from position messages) ───
+    // Cog (Course Over Ground), Sog (Speed Over Ground), TrueHeading
+    // Available in: PositionReport, StandardClassBPositionReport, ExtendedClassBPositionReport, LongRangeAisBroadcastMessage
+    const course = body.Cog != null ? parseFloat(body.Cog) : existing?.course
+    const speed = body.Sog != null ? parseFloat(body.Sog) : existing?.speed
+    const heading = body.TrueHeading != null ? parseFloat(body.TrueHeading) : existing?.heading
+    // NavigationalStatus: only in PositionReport and LongRangeAisBroadcastMessage (NOT Class B)
+    const navStatus = body.NavigationalStatus != null ? String(body.NavigationalStatus) : existing?.nav_status
+    // RateOfTurn: only in PositionReport (Class A)
+    const rateOfTurn = body.RateOfTurn != null ? parseFloat(body.RateOfTurn) : (existing?.extra?.rate_of_turn ?? undefined)
+
+    // ─── Static Data (from ShipStaticData, StaticDataReport, ExtendedClassBPositionReport) ───
+    // ShipName from MetaData is always available when AISstream has seen a static report
+    const shipName = (
+      body.Name?.trim() ||
+      meta.ShipName?.trim() ||
+      existing?.vessel_name ||
+      undefined
+    )
+
+    // IMO: only in ShipStaticData (msg 5)
+    const imo = body.ImoNumber ? String(body.ImoNumber) : (existing?.imo || undefined)
+
+    // CallSign: in ShipStaticData and StaticDataReport
     const callsign = body.CallSign?.trim() || existing?.callsign || undefined
+
+    // ShipType: "Type" in ShipStaticData, "ShipType" in ExtendedClassBPositionReport/StaticDataReport
+    const shipType = (
+      body.Type != null ? String(body.Type) :
+      body.ShipType != null ? String(body.ShipType) :
+      existing?.ship_type
+    )
+
+    // Destination & ETA: only in ShipStaticData (msg 5)
     const destination = body.Destination?.trim() || existing?.destination || undefined
     const eta = body.Eta || existing?.eta || undefined
-    const imo = body.ImoNumber ? String(body.ImoNumber) : existing?.imo || undefined
-    const draught = body.MaximumStaticDraught != null ? parseFloat(body.MaximumStaticDraught) / 10 : existing?.draught
 
-    // Extract dimensions from ShipStaticData
-    const dimA = body.Dimension?.A ?? existing?.dimension_a
-    const dimB = body.Dimension?.B ?? existing?.dimension_b
-    const dimC = body.Dimension?.C ?? existing?.dimension_c
-    const dimD = body.Dimension?.D ?? existing?.dimension_d
+    // Draught: MaximumStaticDraught in ShipStaticData (value in 1/10 m per AIS spec)
+    const draught = body.MaximumStaticDraught != null
+      ? parseFloat(body.MaximumStaticDraught) / 10
+      : existing?.draught
 
+    // Dimensions: A/B/C/D from ShipStaticData or StaticDataReport
+    const dim = body.Dimension || {}
+    const dimA = dim.A != null ? parseInt(dim.A) : existing?.dimension_a
+    const dimB = dim.B != null ? parseInt(dim.B) : existing?.dimension_b
+    const dimC = dim.C != null ? parseInt(dim.C) : existing?.dimension_c
+    const dimD = dim.D != null ? parseInt(dim.D) : existing?.dimension_d
+
+    // ─── Build merged vessel ───
     const vessel: ParsedVessel = {
       mmsi,
       imo,
@@ -138,19 +211,26 @@ const parseAISStream: Parser = (_source, raw) => {
       flag: existing?.flag || undefined,
       latitude,
       longitude,
-      course: body.Cog != null ? parseFloat(body.Cog) : existing?.course,
-      speed: body.Sog != null ? parseFloat(body.Sog) : existing?.speed,
-      heading: body.TrueHeading != null ? parseFloat(body.TrueHeading) : existing?.heading,
-      nav_status: body.NavigationalStatus != null ? String(body.NavigationalStatus) : existing?.nav_status,
+      course: course != null && course <= 360 ? course : existing?.course,
+      speed: speed != null && speed < 102.3 ? speed : existing?.speed, // 102.3 = AIS "not available"
+      heading: heading != null && heading <= 360 ? heading : existing?.heading, // 511 = not available
+      nav_status: navStatus,
       destination,
       eta,
       draught,
-      dimension_a: dimA != null ? parseInt(dimA) : undefined,
-      dimension_b: dimB != null ? parseInt(dimB) : undefined,
-      dimension_c: dimC != null ? parseInt(dimC) : undefined,
-      dimension_d: dimD != null ? parseInt(dimD) : undefined,
-      position_timestamp: meta.time_utc || undefined,
-      extra: { ais_message_type: msgType },
+      dimension_a: dimA,
+      dimension_b: dimB,
+      dimension_c: dimC,
+      dimension_d: dimD,
+      position_timestamp: meta.time_utc || existing?.position_timestamp || undefined,
+      extra: {
+        ais_message_type: msgType,
+        rate_of_turn: rateOfTurn,
+        position_accuracy: body.PositionAccuracy ?? existing?.extra?.position_accuracy,
+        raim: body.Raim ?? existing?.extra?.raim,
+        ...(existing?.extra || {}),
+        ais_message_type: msgType, // override with latest
+      },
     }
 
     vesselMap.set(mmsi, vessel)
