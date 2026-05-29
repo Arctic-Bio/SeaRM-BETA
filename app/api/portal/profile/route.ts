@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function PATCH(req: NextRequest) {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session || !session.crew_id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -13,19 +13,19 @@ export async function PATCH(req: NextRequest) {
 
     // Crew can only update name, pronouns, and availability dates
     if (first_name !== undefined) {
-      await sql`UPDATE crew_applications SET first_name = ${first_name}, updated_at = now() WHERE id = ${session.crew_id}`
+      await sql`UPDATE crew SET first_name = ${first_name}, updated_at = now() WHERE id = ${session.crew_id}`
     }
     if (last_name !== undefined) {
-      await sql`UPDATE crew_applications SET last_name = ${last_name}, updated_at = now() WHERE id = ${session.crew_id}`
+      await sql`UPDATE crew SET last_name = ${last_name}, updated_at = now() WHERE id = ${session.crew_id}`
     }
     if (pronouns !== undefined) {
-      await sql`UPDATE crew_applications SET pronouns = ${pronouns}, updated_at = now() WHERE id = ${session.crew_id}`
+      await sql`UPDATE crew SET pronouns = ${pronouns}, updated_at = now() WHERE id = ${session.crew_id}`
     }
     if (availability_start_date !== undefined) {
-      await sql`UPDATE crew_applications SET availability_start_date = ${availability_start_date || null}, updated_at = now() WHERE id = ${session.crew_id}`
+      await sql`UPDATE crew SET availability_start_date = ${availability_start_date || null}, updated_at = now() WHERE id = ${session.crew_id}`
     }
     if (availability_end_date !== undefined) {
-      await sql`UPDATE crew_applications SET availability_end_date = ${availability_end_date || null}, updated_at = now() WHERE id = ${session.crew_id}`
+      await sql`UPDATE crew SET availability_end_date = ${availability_end_date || null}, updated_at = now() WHERE id = ${session.crew_id}`
     }
 
     // Also update user name if name changed

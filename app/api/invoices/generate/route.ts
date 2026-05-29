@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (!crew_id) return NextResponse.json({ error: "crew_id required" }, { status: 400 })
 
     // Get crew info
-    const crew = await sql`SELECT id, first_name, last_name, email FROM crew_applications WHERE id = ${crew_id}`
+    const crew = await sql`SELECT id, first_name, last_name, email FROM crew WHERE id = ${crew_id}`
     if (!crew.length) return NextResponse.json({ error: "Crew not found" }, { status: 404 })
 
     // Get settings
@@ -65,8 +65,9 @@ export async function POST(req: NextRequest) {
     } else if (generation_type === "position") {
       // Pull paid position assignments and generate from estimated hours
       const positions = await sql`
-        SELECT cp.*, v.voyage_name
+        SELECT cp.*, p.name as position_name, v.voyage_name
         FROM crew_positions cp
+        LEFT JOIN positions p ON p.id = cp.position_id
         LEFT JOIN voyages v ON v.id = cp.voyage_id
         WHERE cp.assigned_crew_id = ${crew_id} AND cp.is_paid = true
       `

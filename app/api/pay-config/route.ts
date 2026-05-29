@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const result = await sql`
       INSERT INTO crew_pay_config (
-        position_name, department, is_volunteer, hourly_rate,
+        position_id, department, is_volunteer, hourly_rate,
         daily_rate, currency, overtime_rate, notes
       ) VALUES (
         ${body.position_name}, ${body.department || null},

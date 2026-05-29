@@ -1,45 +1,62 @@
-import { neon } from "@neondatabase/serverless"
+import { neon as createNeon, type NeonQueryFunction } from "@neondatabase/serverless"
+
+let cachedSql: NeonQueryFunction<false, false> | null = null
 
 export function getDb() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL environment variable is not set")
+  if (!cachedSql) {
+    // Create stub for build time
+    if (!process.env.DATABASE_URL) {
+      // Return a stub function during build
+      return (async (strings: any) => []) as any
+    }
+    cachedSql = createNeon(process.env.DATABASE_URL)
   }
-  return neon(process.env.DATABASE_URL)
+  return cachedSql
 }
 
-// Applicant status types
-export const APPLICANT_STATUSES = [
-  "new_applicant",
-  "reviewed",
-  "awaiting_interview",
-  "interview_completed",
-  "candidate",
-  "approved",
-  "confirmed",
+// Crew member status lifecycle
+export const CREW_STATUSES = [
+  "application",
+  "screening",
+  "interview",
+  "verified",
+  "volunteer",
+  "active",
+  "standby",
+  "inactive",
+  "alumni",
   "rejected",
 ] as const
 
-export type ApplicantStatus = (typeof APPLICANT_STATUSES)[number]
+export type CrewStatus = (typeof CREW_STATUSES)[number]
 
-export const STATUS_LABELS: Record<ApplicantStatus, string> = {
-  new_applicant: "New Applicant",
-  reviewed: "Reviewed",
-  awaiting_interview: "Awaiting Interview",
-  interview_completed: "Interview Completed",
-  candidate: "Candidate",
-  approved: "Approved",
-  confirmed: "Confirmed",
+// Keep old names as aliases for backward compatibility during migration
+export const APPLICANT_STATUSES = CREW_STATUSES
+export type ApplicantStatus = CrewStatus
+
+export const STATUS_LABELS: Record<CrewStatus, string> = {
+  application: "Application",
+  screening: "Screening",
+  interview: "Interview",
+  verified: "Verified",
+  volunteer: "Volunteer",
+  active: "Active",
+  standby: "Standby",
+  inactive: "Inactive",
+  alumni: "Alumni",
   rejected: "Rejected",
 }
 
-export const STATUS_COLORS: Record<ApplicantStatus, string> = {
-  new_applicant: "bg-chart-1/15 text-chart-1 border-chart-1/25",
-  reviewed: "bg-chart-2/15 text-chart-2 border-chart-2/25",
-  awaiting_interview: "bg-warning/15 text-warning border-warning/25",
-  interview_completed: "bg-chart-3/15 text-chart-3 border-chart-3/25",
-  candidate: "bg-chart-4/15 text-chart-4 border-chart-4/25",
-  approved: "bg-success/15 text-success border-success/25",
-  confirmed: "bg-primary/15 text-primary border-primary/25",
+export const STATUS_COLORS: Record<CrewStatus, string> = {
+  application: "bg-chart-1/15 text-chart-1 border-chart-1/25",
+  screening: "bg-chart-2/15 text-chart-2 border-chart-2/25",
+  interview: "bg-warning/15 text-warning border-warning/25",
+  verified: "bg-chart-3/15 text-chart-3 border-chart-3/25",
+  volunteer: "bg-chart-4/15 text-chart-4 border-chart-4/25",
+  active: "bg-success/15 text-success border-success/25",
+  standby: "bg-primary/15 text-primary border-primary/25",
+  inactive: "bg-muted text-muted-foreground border-border",
+  alumni: "bg-sidebar-accent/50 text-sidebar-foreground border-sidebar-border",
   rejected: "bg-destructive/15 text-destructive border-destructive/25",
 }
 
@@ -110,7 +127,7 @@ export const CSV_SKILL_MAP: Record<string, string> = {
   "Biology/Science": "skill_biology_science",
 }
 
-export interface CrewApplication {
+export interface CrewMember {
   id: string
   created_at: string
   updated_at: string
@@ -118,7 +135,7 @@ export interface CrewApplication {
   last_name: string
   email: string
   phone: string
-  status: ApplicantStatus
+  status: CrewStatus
   rating: number
   gender: string
   country: string
@@ -131,6 +148,8 @@ export interface CrewApplication {
   maritime_qualifications: string
   department_preference: string
   has_criminal_record: boolean
+  position_id: string | null
+  preferred_position_id: string | null
   skill_small_boats: string
   skill_engineering: string
   skill_mechanical: string
@@ -151,6 +170,9 @@ export interface CrewApplication {
   upload_batch_id: string
   csv_row_number: number
 }
+
+// Backward-compatible alias
+export type CrewApplication = CrewMember
 
 // Ship types
 export const SHIP_TYPES = ["research", "patrol", "rescue", "supply", "other"] as const

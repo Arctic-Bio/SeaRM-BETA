@@ -51,9 +51,9 @@ export type ExtensionCategory =
 // System events that extensions can hook into
 export const SYSTEM_EVENTS = {
   // Crew lifecycle
-  "crew.application.received": { label: "Application Received", category: "crew", payload: ["crew_id", "email", "name", "position"] },
-  "crew.application.approved": { label: "Application Approved", category: "crew", payload: ["crew_id", "approved_by"] },
-  "crew.application.rejected": { label: "Application Rejected", category: "crew", payload: ["crew_id", "reason"] },
+  "crew.status.changed": { label: "Status Changed", category: "crew", payload: ["crew_id", "old_status", "new_status"] },
+  "crew.member.added": { label: "Crew Member Added", category: "crew", payload: ["crew_id", "email", "name", "position"] },
+  "crew.member.approved": { label: "Crew Member Approved", category: "crew", payload: ["crew_id", "approved_by"] },
   "crew.profile.updated": { label: "Profile Updated", category: "crew", payload: ["crew_id", "fields_changed"] },
   "crew.status.changed": { label: "Status Changed", category: "crew", payload: ["crew_id", "old_status", "new_status"] },
 

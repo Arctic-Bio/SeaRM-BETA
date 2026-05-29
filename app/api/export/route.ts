@@ -25,13 +25,13 @@ const EXPORT_QUERIES: Record<string, string> = {
       c.gender, c.pronouns, c.country, c.city, c.date_of_birth, c.current_occupation,
       c.availability_start_date, c.availability_end_date, c.duration,
       c.languages, c.maritime_qualifications, c.department_preference,
-      c.has_criminal_record,
+      c.has_criminal_record, c.position_id, c.preferred_position_id,
       c.skill_small_boats, c.skill_engineering, c.skill_mechanical, c.skill_scuba_diving,
       c.skill_electrical, c.skill_electronics, c.skill_cooking, c.skill_media,
       c.skill_drone, c.skill_photography, c.skill_videography, c.skill_medical,
       c.skill_welding, c.skill_crane_operation, c.skill_biology_science,
-      c.notes, c.created_at, c.updated_at
-    FROM crew_applications c ORDER BY c.created_at DESC`,
+      c.notes, c.upload_batch_id, c.csv_row_number, c.created_at, c.updated_at
+    FROM crew c ORDER BY c.created_at DESC`,
   ships: `
     SELECT id, name, type, flag, imo_number, call_sign, mmsi, length_m, beam_m, draft_m,
       gross_tonnage, crew_capacity, year_built, hull_material, engine_type, max_speed_knots,
@@ -44,15 +44,16 @@ const EXPORT_QUERIES: Record<string, string> = {
     FROM voyages v LEFT JOIN ships s ON s.id = v.ship_id
     ORDER BY v.created_at DESC`,
   positions: `
-    SELECT cp.id, cp.position_name, cp.department, cp.status, cp.priority, cp.min_skill_level,
+    SELECT cp.id, p.id as position_id, p.name, p.department, cp.status, cp.priority, p.required_certifications,
       cp.required_skills, cp.notes,
       v.voyage_name, s.name as ship_name,
       ca.first_name as assigned_first_name, ca.last_name as assigned_last_name,
       cp.created_at, cp.updated_at
     FROM crew_positions cp
+    LEFT JOIN positions p ON p.id = cp.position_id
     LEFT JOIN voyages v ON v.id = cp.voyage_id
-    LEFT JOIN ships s ON s.id = v.ship_id
-    LEFT JOIN crew_applications ca ON ca.id = cp.assigned_crew_id
+    LEFT JOIN ships s ON s.id = cp.ship_id
+    LEFT JOIN crew ca ON ca.id = cp.assigned_crew_id
     ORDER BY cp.created_at DESC`,
   tasks: `
     SELECT t.id, t.title, t.description, t.task_type, t.status, t.priority,
@@ -61,7 +62,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       v.voyage_name, s.name as ship_name,
       t.created_at, t.updated_at
     FROM tasks t
-    LEFT JOIN crew_applications ca ON ca.id = t.crew_id
+    LEFT JOIN crew ca ON ca.id = t.crew_id
     LEFT JOIN voyages v ON v.id = t.voyage_id
     LEFT JOIN ships s ON s.id = t.ship_id
     ORDER BY t.created_at DESC`,
@@ -75,7 +76,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       ca2.crew_review, ca2.crew_review_rating, ca2.reviewed_by,
       ca2.notes, ca2.created_at, ca2.updated_at
     FROM crew_assignments ca2
-    INNER JOIN crew_applications cr ON cr.id = ca2.crew_id
+    INNER JOIN crew cr ON cr.id = ca2.crew_id
     LEFT JOIN voyages v ON v.id = ca2.voyage_id
     LEFT JOIN ships s ON s.id = v.ship_id
     ORDER BY ca2.created_at DESC`,
@@ -85,7 +86,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       v.voyage_name, s.name as ship_name,
       st.created_at
     FROM crew_sea_time st
-    INNER JOIN crew_applications ca ON ca.id = st.crew_id
+    INNER JOIN crew ca ON ca.id = st.crew_id
     LEFT JOIN voyages v ON v.id = st.voyage_id
     LEFT JOIN ships s ON s.id = st.ship_id
     ORDER BY st.created_at DESC`,
@@ -105,7 +106,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       v.voyage_name, s.name as ship_name,
       a.metadata, a.created_at
     FROM activities a
-    LEFT JOIN crew_applications ca ON ca.id = a.crew_id
+    LEFT JOIN crew ca ON ca.id = a.crew_id
     LEFT JOIN voyages v ON v.id = a.voyage_id
     LEFT JOIN ships s ON s.id = a.ship_id
     ORDER BY a.created_at DESC`,
@@ -115,7 +116,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       v.voyage_name, s.name as ship_name,
       cc.created_at
     FROM crew_checkins cc
-    INNER JOIN crew_applications ca ON ca.id = cc.crew_id
+    INNER JOIN crew ca ON ca.id = cc.crew_id
     LEFT JOIN voyages v ON v.id = cc.voyage_id
     LEFT JOIN ships s ON s.id = cc.ship_id
     ORDER BY cc.created_at DESC`,
@@ -123,7 +124,7 @@ const EXPORT_QUERIES: Record<string, string> = {
     SELECT ct.id, ca.first_name, ca.last_name, ca.email,
       ct.tag, ct.created_at
     FROM crew_tags ct
-    INNER JOIN crew_applications ca ON ca.id = ct.crew_id
+    INNER JOIN crew ca ON ca.id = ct.crew_id
     ORDER BY ct.created_at DESC`,
   documents: `
     SELECT d.id, d.file_name, d.document_type, d.file_url, d.file_size, d.mime_type,
@@ -132,7 +133,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       d.uploaded_by, d.expiry_date, d.verified, d.verified_by, d.verified_at,
       d.notes, d.created_at
     FROM documents d
-    LEFT JOIN crew_applications ca ON ca.id = d.crew_id
+    LEFT JOIN crew ca ON ca.id = d.crew_id
     LEFT JOIN ships s ON s.id = d.ship_id
     ORDER BY d.created_at DESC`,
   onboarding: `
@@ -141,7 +142,7 @@ const EXPORT_QUERIES: Record<string, string> = {
       v.voyage_name,
       oc.created_at, oc.updated_at
     FROM onboarding_checklists oc
-    INNER JOIN crew_applications ca ON ca.id = oc.crew_id
+    INNER JOIN crew ca ON ca.id = oc.crew_id
     LEFT JOIN voyages v ON v.id = oc.voyage_id
     ORDER BY oc.created_at DESC`,
   maintenance: `
@@ -178,6 +179,49 @@ const EXPORT_QUERIES: Record<string, string> = {
   users: `
     SELECT id, name, email, role, created_at, updated_at
     FROM users ORDER BY created_at DESC`,
+  invoices: `
+    SELECT ci.id, ci.invoice_number, ci.crew_id,
+      cr.first_name as crew_first_name, cr.last_name as crew_last_name,
+      ci.status, ci.currency, ci.subtotal, ci.tax_amount, ci.total,
+      ci.issue_date, ci.due_date, ci.paid_date,
+      ci.notes, ci.created_at, ci.updated_at
+    FROM crew_invoices ci
+    LEFT JOIN crew cr ON cr.id = ci.crew_id
+    ORDER BY ci.created_at DESC`,
+  invoice_items: `
+    SELECT ili.id, ili.invoice_id, ili.description, ili.quantity,
+      ili.unit_price, ili.total, ili.category,
+      ili.created_at
+    FROM invoice_line_items ili
+    ORDER BY ili.created_at DESC`,
+  saved_views: `
+    SELECT id, name, description, filters, sort_config, visible_columns,
+      is_default, created_by, created_at, updated_at
+    FROM saved_views ORDER BY created_at DESC`,
+  roles_permissions: `
+    SELECT r.id, r.name as role_name, r.description,
+      rp.permission, rp.granted
+    FROM roles r
+    LEFT JOIN role_permissions rp ON rp.role_id = r.id
+    ORDER BY r.name, rp.permission`,
+  countries: `
+    SELECT id, name, code, region
+    FROM countries ORDER BY name`,
+  site_settings: `
+    SELECT key, value, updated_at
+    FROM site_settings ORDER BY key`,
+  file_storage: `
+    SELECT id, file_name, file_type, file_size, storage_key, context, entity_id,
+      uploaded_by, created_at
+    FROM file_storage ORDER BY created_at DESC`,
+  hourly_logs: `
+    SELECT hl.id, hl.crew_id,
+      cr.first_name as crew_first_name, cr.last_name as crew_last_name,
+      hl.log_date, hl.hours, hl.description, hl.category,
+      hl.created_at
+    FROM crew_hourly_logs hl
+    LEFT JOIN crew cr ON cr.id = hl.crew_id
+    ORDER BY hl.created_at DESC`,
 }
 
 export async function GET(req: NextRequest) {

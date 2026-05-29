@@ -24,8 +24,8 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-  APPLICANT_STATUSES, STATUS_LABELS, SKILL_FIELDS, SKILL_LEVELS, DEPARTMENTS,
-  type CrewApplication, type ApplicantStatus,
+  CREW_STATUSES, STATUS_LABELS, SKILL_FIELDS, SKILL_LEVELS, DEPARTMENTS,
+  type CrewMember, type CrewStatus,
 } from "@/lib/db"
 import { StatusBadge } from "@/components/status-badge"
 import { StarRating } from "@/components/star-rating"
@@ -36,7 +36,7 @@ import {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
-interface CrewRow extends CrewApplication {
+interface CrewRow extends CrewMember {
   tags: string[]
 }
 
@@ -135,7 +135,7 @@ export function CrewTable() {
     await fetch(`/api/crew/${deleteId}`, { method: "DELETE" })
     setDeleteId(null)
     setSelected((s) => { const n = new Set(s); n.delete(deleteId); return n })
-    toast.success("Applicant deleted")
+    toast.success("Crew member deleted")
     mutate()
   }
 
@@ -165,7 +165,7 @@ export function CrewTable() {
         })
       )
     )
-    toast.success(`Updated ${selected.size} applicants`)
+    toast.success(`Updated ${selected.size} crew members`)
     setSelected(new Set())
     mutate()
   }
@@ -265,7 +265,7 @@ export function CrewTable() {
                   <SelectTrigger className="h-9"><SelectValue placeholder="Any status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Any status</SelectItem>
-                    {APPLICANT_STATUSES.map((s) => (
+                    {CREW_STATUSES.map((s) => (
                       <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
                     ))}
                   </SelectContent>
@@ -399,7 +399,7 @@ export function CrewTable() {
             <Select onValueChange={(v) => handleBulkStatusChange(v)}>
               <SelectTrigger className="h-8 w-52"><SelectValue placeholder="Bulk change status..." /></SelectTrigger>
               <SelectContent>
-                {APPLICANT_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
+                {CREW_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="gap-1">
@@ -413,7 +413,7 @@ export function CrewTable() {
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">
-          {pagination.total} applicant{pagination.total !== 1 ? "s" : ""} found
+          {pagination.total} crew member{pagination.total !== 1 ? "s" : ""} found
         </p>
       </div>
 
@@ -427,7 +427,7 @@ export function CrewTable() {
           ) : rows.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Users className="h-10 w-10 text-muted-foreground/30" />
-              <p className="mt-3 text-sm font-medium">No applicants found</p>
+              <p className="mt-3 text-sm font-medium">No crew members found</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {activeFilterCount > 0 || filters.search ? "Try adjusting your filters" : "Upload a CSV to get started"}
               </p>
@@ -495,10 +495,10 @@ export function CrewTable() {
                       <TableCell>
                         <Select value={crew.status} onValueChange={(v) => handleStatusChange(crew.id, v)}>
                           <SelectTrigger className="h-7 w-auto border-none bg-transparent p-0 shadow-none">
-                            <StatusBadge status={crew.status as ApplicantStatus} />
+                            <StatusBadge status={crew.status as CrewStatus} />
                           </SelectTrigger>
                           <SelectContent>
-                            {APPLICANT_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
+                            {CREW_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -572,8 +572,8 @@ export function CrewTable() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Applicant</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete this applicant and all related data. This cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>Delete Crew Member</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this crew member and all related data. This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET: List all triggers with joined template/provider names
 export async function GET() {
   try {
+    const sql = getDb()
     const rows = await sql`
       SELECT t.*, tmpl.name AS template_name, tmpl.slug AS template_slug,
         p.name AS provider_name
@@ -23,6 +23,7 @@ export async function GET() {
 // POST: Create or update a trigger
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     if (body.action === "update") return handleUpdate(body)
     return handleCreate(body)
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
 // DELETE: Remove a trigger
 export async function DELETE(req: NextRequest) {
   try {
+    const sql = getDb()
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
     await sql`DELETE FROM email_triggers WHERE id = ${id}`

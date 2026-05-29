@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET: List all global documents
 export async function GET() {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session || session.role === "crew") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -28,6 +28,7 @@ export async function GET() {
 // POST: Upload a new global document
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session || session.role !== "sysadmin") {
       return NextResponse.json({ error: "Only sysadmin can upload global documents" }, { status: 403 })
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
 // DELETE: Remove a global document and all its crew copies
 export async function DELETE(req: NextRequest) {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session || session.role !== "sysadmin") {
       return NextResponse.json({ error: "Only sysadmin can delete global documents" }, { status: 403 })

@@ -26,11 +26,11 @@ import { StatusBadge } from "@/components/status-badge"
 import { StarRating } from "@/components/star-rating"
 import { SkillBadge } from "@/components/skill-badge"
 import {
-  APPLICANT_STATUSES,
+  CREW_STATUSES,
   STATUS_LABELS,
   SKILL_FIELDS,
-  type ApplicantStatus,
-  type CrewApplication,
+  type CrewStatus,
+  type CrewMember,
 } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -90,7 +90,7 @@ export default function CrewDetailPage({
   const { data: voyagesData } = useSWR("/api/voyages", fetcher)
   const { data: shipsData } = useSWR("/api/ships", fetcher)
 
-  const member: CrewApplication | null = data?.data || null
+  const member: CrewMember | null = data?.data || null
   const voyageList = Array.isArray(voyagesData) ? voyagesData : voyagesData?.data ?? []
   const shipList = Array.isArray(shipsData) ? shipsData : shipsData?.data ?? []
   const tags: string[] = Array.isArray(tagsData) ? tagsData.map((t: any) => t.tag) : []
@@ -249,9 +249,9 @@ export default function CrewDetailPage({
   if (error || !member) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-muted-foreground">Application not found</p>
+        <p className="text-muted-foreground">Crew member not found</p>
         <Button variant="outline" asChild>
-          <Link href="/crew">Back to Applications</Link>
+          <Link href="/crew">Back to Crew</Link>
         </Button>
       </div>
     )
@@ -300,7 +300,7 @@ export default function CrewDetailPage({
                   {member.first_name} {member.last_name}
                 </h1>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <StatusBadge status={member.status as ApplicantStatus} />
+                  <StatusBadge status={member.status as CrewStatus} />
                   <StarRating rating={member.rating} onChange={handleRatingChange} size="md" />
                   {checkinData?.currentStatus && (
                     <Badge variant={checkinData.currentStatus === "check_in" ? "default" : "outline"} className="text-[10px] gap-1">
@@ -330,7 +330,7 @@ export default function CrewDetailPage({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {APPLICANT_STATUSES.map((s) => (
+            {CREW_STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
                 {STATUS_LABELS[s]}
               </SelectItem>
@@ -347,7 +347,7 @@ export default function CrewDetailPage({
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="sea-time">Sea Time</TabsTrigger>
           <TabsTrigger value="checkins">Check-in/out</TabsTrigger>
-          <TabsTrigger value="application">Full Application</TabsTrigger>
+          <TabsTrigger value="application">Full Profile</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
@@ -438,7 +438,7 @@ export default function CrewDetailPage({
                 <div className="flex flex-wrap gap-2">
                   {SKILL_FIELDS.map((sf) => {
                     const level =
-                      member[sf.key as keyof CrewApplication] as string
+                      member[sf.key as keyof CrewMember] as string
                     return (
                       <SkillBadge
                         key={sf.key}
@@ -449,7 +449,7 @@ export default function CrewDetailPage({
                   })}
                   {SKILL_FIELDS.every(
                     (sf) =>
-                      !(member[sf.key as keyof CrewApplication] as string)
+                      !(member[sf.key as keyof CrewMember] as string)
                   ) && (
                     <p className="text-xs text-muted-foreground">
                       No skills data available
@@ -515,23 +515,23 @@ export default function CrewDetailPage({
                 const stages = [
                   {
                     key: "application",
-                    label: "Application Submitted",
+                    label: "Profile Created",
                     completed: true,
                   },
                   {
-                    key: "reviewed",
-                    label: "Application Reviewed",
-                    completed: ["reviewed", "awaiting_interview", "interview_completed", "candidate", "approved", "confirmed"].includes(member.status),
+                    key: "screening",
+                    label: "Screening",
+                    completed: ["screening", "interview", "verified", "volunteer", "active", "standby"].includes(member.status),
                   },
                   {
                     key: "interview",
                     label: "Interview",
-                    completed: ["interview_completed", "candidate", "approved", "confirmed"].includes(member.status),
+                    completed: ["interview", "verified", "volunteer", "active", "standby"].includes(member.status),
                   },
                   {
-                    key: "approved",
-                    label: "Approved",
-                    completed: ["approved", "confirmed"].includes(member.status),
+                    key: "verified",
+                    label: "Verified",
+                    completed: ["verified", "volunteer", "active", "standby"].includes(member.status),
                   },
                   {
                     key: "documents",
@@ -546,9 +546,9 @@ export default function CrewDetailPage({
                     detail: `${requiredEsignTypes.filter((rd: any) => esignDocsMap.some((d: any) => d.document_type === rd.type && d.signed_by)).length}/${requiredEsignTypes.length}`,
                   },
                   {
-                    key: "confirmed",
-                    label: "Confirmed & Ready",
-                    completed: member.status === "confirmed",
+                    key: "active",
+                    label: "Active & Ready",
+                    completed: ["active", "standby"].includes(member.status),
                   },
                 ]
                 return (
@@ -1012,13 +1012,13 @@ export default function CrewDetailPage({
             <CardHeader>
               <CardTitle className="text-sm">Internal Notes</CardTitle>
               <CardDescription>
-                Add private notes about this applicant. Only visible to crew
+                Add private notes about this crew member. Only visible to
                 coordinators.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <Textarea
-                placeholder="Add notes about this applicant - interview observations, follow-ups, special considerations..."
+                placeholder="Add notes about this crew member - interview observations, follow-ups, special considerations..."
                 value={notes ?? member.notes ?? ""}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={6}

@@ -1,130 +1,158 @@
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { getDb } from "@/lib/db"
 
 export interface UserPermissions {
   userId: string
-  roleId: string | null
-  roleName: string | null
-  permissions: string[]
+  roles: { id: string; name: string; permissions: string[] }[]
+  allPermissions: string[]
   isAdmin: boolean
+  isSysadmin: boolean
 }
 
-// Get all permissions for a user from DB
+// Get all permissions for a user from the new roles/user_roles tables
 export async function getUserPermissions(userId: string): Promise<UserPermissions> {
+  const sql = getDb()
   try {
+    // Get all roles assigned to this user via user_roles junction table
     const result = await sql`
       SELECT 
-        u.id,
-        r.id as role_id,
-        r.name as role_name,
-        COALESCE(array_agg(rp.permission) FILTER (WHERE rp.permission IS NOT NULL), ARRAY[]::text[]) as permissions
-      FROM users u
-      LEFT JOIN custom_roles r ON u.custom_role_id = r.id
-      LEFT JOIN role_permissions rp ON r.id = rp.role_id
-      WHERE u.id = ${userId}
-      GROUP BY u.id, r.id, r.name
+        r.id,
+        r.name,
+        r.permissions
+      FROM user_roles ur
+      JOIN roles r ON r.id = ur.role_id
+      WHERE ur.user_id = ${userId}
+      ORDER BY r.name
     `
 
-    if (result.length === 0) {
-      return { userId, roleId: null, roleName: null, permissions: [], isAdmin: false }
+    let roles = result.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      permissions: Array.isArray(row.permissions) ? row.permissions : [],
+    }))
+
+    // Fallback: if no user_roles entries, check legacy role column on users table
+    if (roles.length === 0) {
+      const userResult = await sql`SELECT role FROM users WHERE id = ${userId}`
+      const legacyRole = userResult[0]?.role
+      if (legacyRole) {
+        // Try to match legacy role to a role in the roles table
+        const matchedRole = await sql`SELECT id, name, permissions FROM roles WHERE name = ${legacyRole}`
+        if (matchedRole.length > 0) {
+          roles = matchedRole.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            permissions: Array.isArray(row.permissions) ? row.permissions : [],
+          }))
+          // Auto-assign the matched role to user_roles for future lookups
+          await sql`
+            INSERT INTO user_roles (user_id, role_id)
+            VALUES (${userId}, ${matchedRole[0].id})
+            ON CONFLICT (user_id, role_id) DO NOTHING
+          `
+        } else {
+          // Legacy role is "sysadmin"/"captain"/"hr"/"crew" - map to new roles
+          const roleMap: Record<string, string> = { sysadmin: 'sysadmin', captain: 'admin', hr: 'crew_manager', crew: 'viewer' }
+          const mappedName = roleMap[legacyRole] || 'viewer'
+          const mapped = await sql`SELECT id, name, permissions FROM roles WHERE name = ${mappedName}`
+          if (mapped.length > 0) {
+            roles = mapped.map((row: any) => ({
+              id: row.id,
+              name: row.name,
+              permissions: Array.isArray(row.permissions) ? row.permissions : [],
+            }))
+            await sql`
+              INSERT INTO user_roles (user_id, role_id)
+              VALUES (${userId}, ${mapped[0].id})
+              ON CONFLICT (user_id, role_id) DO NOTHING
+            `
+          }
+        }
+      }
     }
 
-    const row = result[0]
+    // Flatten all permissions from all roles
+    const allPermissions = [...new Set(roles.flatMap(r => r.permissions))]
+    
+    const isSysadmin = roles.some(r => r.name === 'sysadmin') || allPermissions.includes('*')
+    const isAdmin = isSysadmin || roles.some(r => r.name === 'admin')
+
     return {
       userId,
-      roleId: row.role_id || null,
-      roleName: row.role_name || null,
-      permissions: row.permissions || [],
-      isAdmin: row.role_name === 'Administrator',
+      roles,
+      allPermissions,
+      isAdmin,
+      isSysadmin,
     }
   } catch (error) {
     console.error('[RBAC] Error fetching user permissions:', error)
-    return { userId, roleId: null, roleName: null, permissions: [], isAdmin: false }
+    return { userId, roles: [], allPermissions: [], isAdmin: false, isSysadmin: false }
   }
 }
 
 // Check if user has specific permission
 export function hasPermission(userPerms: UserPermissions, permission: string): boolean {
-  if (userPerms.isAdmin) return true // Admins have all permissions
-  return userPerms.permissions.includes(permission)
+  if (userPerms.isSysadmin) return true
+  if (userPerms.allPermissions.includes('*')) return true
+  return userPerms.allPermissions.includes(permission)
 }
 
 // Check if user has any of multiple permissions
 export function hasAnyPermission(userPerms: UserPermissions, permissions: string[]): boolean {
-  if (userPerms.isAdmin) return true
-  return permissions.some(p => userPerms.permissions.includes(p))
+  if (userPerms.isSysadmin) return true
+  return permissions.some(p => userPerms.allPermissions.includes(p))
 }
 
 // Check if user has all of multiple permissions
 export function hasAllPermissions(userPerms: UserPermissions, permissions: string[]): boolean {
-  if (userPerms.isAdmin) return true
-  return permissions.every(p => userPerms.permissions.includes(p))
+  if (userPerms.isSysadmin) return true
+  return permissions.every(p => userPerms.allPermissions.includes(p))
 }
 
-// Get all available roles with their permissions
+// Get all available roles
 export async function getAllRoles() {
+  const sql = getDb()
   const roles = await sql`
-    SELECT 
-      r.id, r.name, r.description, r.color, r.is_system, r.created_at, r.updated_at,
-      COALESCE(array_agg(rp.permission) FILTER (WHERE rp.permission IS NOT NULL), ARRAY[]::text[]) as permissions
-    FROM custom_roles r
-    LEFT JOIN role_permissions rp ON r.id = rp.role_id
-    GROUP BY r.id, r.name, r.description, r.color, r.is_system, r.created_at, r.updated_at
-    ORDER BY r.is_system DESC, r.name ASC
+    SELECT id, name, description, permissions, is_system, color, created_at, updated_at
+    FROM roles
+    ORDER BY is_system DESC, name ASC
   `
   return roles
 }
 
-// Get a specific role with its permissions
+// Get a specific role
 export async function getRoleWithPermissions(roleId: string) {
+  const sql = getDb()
   const result = await sql`
-    SELECT 
-      r.id, r.name, r.description, r.color, r.is_system,
-      COALESCE(array_agg(rp.permission) FILTER (WHERE rp.permission IS NOT NULL), ARRAY[]::text[]) as permissions
-    FROM custom_roles r
-    LEFT JOIN role_permissions rp ON r.id = rp.role_id
-    WHERE r.id = ${roleId}
-    GROUP BY r.id, r.name, r.description, r.color, r.is_system
+    SELECT id, name, description, permissions, is_system, color
+    FROM roles
+    WHERE id = ${roleId}
   `
   if (result.length === 0) return null
   return result[0]
 }
 
-// Create a new custom role
+// Create a new role
 export async function createRole(name: string, description: string = '', color: string = '#6366f1', permissions: string[] = []) {
-  // Insert role
+  const sql = getDb()
   const roleResult = await sql`
-    INSERT INTO custom_roles (name, description, color, is_system)
-    VALUES (${name}, ${description}, ${color}, false)
+    INSERT INTO roles (name, description, color, permissions, is_system)
+    VALUES (${name}, ${description}, ${color}, ${JSON.stringify(permissions)}::jsonb, false)
     ON CONFLICT (name) DO NOTHING
-    RETURNING id, name, description, color, is_system
+    RETURNING id, name, description, color, permissions, is_system
   `
 
   if (roleResult.length === 0) {
     throw new Error(`Role "${name}" already exists`)
   }
 
-  const role = roleResult[0]
-
-  // Insert permissions (if any)
-  if (permissions.length > 0) {
-    for (const perm of permissions) {
-      await sql`
-        INSERT INTO role_permissions (role_id, permission)
-        VALUES (${role.id}, ${perm})
-        ON CONFLICT (role_id, permission) DO NOTHING
-      `
-    }
-  }
-
-  return role
+  return roleResult[0]
 }
 
 // Update a role
 export async function updateRole(roleId: string, updates: { name?: string; description?: string; color?: string }) {
+  const sql = getDb()
   const result = await sql`
-    UPDATE custom_roles
+    UPDATE roles
     SET 
       name = COALESCE(${updates.name || null}, name),
       description = COALESCE(${updates.description || null}, description),
@@ -139,63 +167,98 @@ export async function updateRole(roleId: string, updates: { name?: string; descr
 
 // Delete a role (can't delete system roles)
 export async function deleteRole(roleId: string) {
-  const role = await sql`SELECT is_system FROM custom_roles WHERE id = ${roleId}`
+  const sql = getDb()
+  const role = await sql`SELECT is_system FROM roles WHERE id = ${roleId}`
   if (role.length > 0 && role[0].is_system) {
     throw new Error('Cannot delete system roles')
   }
-
-  await sql`DELETE FROM custom_roles WHERE id = ${roleId}`
+  await sql`DELETE FROM user_roles WHERE role_id = ${roleId}`
+  await sql`DELETE FROM roles WHERE id = ${roleId}`
 }
 
 // Set role permissions (replace all)
 export async function setRolePermissions(roleId: string, permissions: string[]) {
-  // Delete existing
-  await sql`DELETE FROM role_permissions WHERE role_id = ${roleId}`
-
-  // Insert new (if any)
-  if (permissions.length > 0) {
-    for (const perm of permissions) {
-      await sql`
-        INSERT INTO role_permissions (role_id, permission)
-        VALUES (${roleId}, ${perm})
-        ON CONFLICT (role_id, permission) DO NOTHING
-      `
-    }
-  }
+  const sql = getDb()
+  await sql`
+    UPDATE roles
+    SET permissions = ${JSON.stringify(permissions)}::jsonb, updated_at = NOW()
+    WHERE id = ${roleId}
+  `
 }
 
 // Add permission to role
 export async function addPermissionToRole(roleId: string, permission: string) {
+  const sql = getDb()
   await sql`
-    INSERT INTO role_permissions (role_id, permission)
-    VALUES (${roleId}, ${permission})
-    ON CONFLICT (role_id, permission) DO NOTHING
+    UPDATE roles
+    SET permissions = permissions || ${JSON.stringify([permission])}::jsonb, updated_at = NOW()
+    WHERE id = ${roleId} AND NOT (permissions ? ${permission})
   `
 }
 
 // Remove permission from role
 export async function removePermissionFromRole(roleId: string, permission: string) {
+  const sql = getDb()
   await sql`
-    DELETE FROM role_permissions
-    WHERE role_id = ${roleId} AND permission = ${permission}
+    UPDATE roles
+    SET permissions = permissions - ${permission}, updated_at = NOW()
+    WHERE id = ${roleId}
   `
 }
 
-// Assign role to user
-export async function assignRoleToUser(userId: string, roleId: string | null) {
+// Assign role to user (using user_roles junction)
+export async function assignRoleToUser(userId: string, roleId: string, assignedBy?: string) {
+  const sql = getDb()
   await sql`
-    UPDATE users
-    SET custom_role_id = ${roleId}
-    WHERE id = ${userId}
+    INSERT INTO user_roles (user_id, role_id, assigned_by)
+    VALUES (${userId}, ${roleId}, ${assignedBy || null})
+    ON CONFLICT (user_id, role_id) DO NOTHING
   `
+}
+
+// Remove role from user
+export async function removeRoleFromUser(userId: string, roleId: string) {
+  const sql = getDb()
+  await sql`
+    DELETE FROM user_roles
+    WHERE user_id = ${userId} AND role_id = ${roleId}
+  `
+}
+
+// Get all roles for a user
+export async function getUserRoles(userId: string) {
+  const sql = getDb()
+  const roles = await sql`
+    SELECT r.id, r.name, r.description, r.color, r.permissions, ur.assigned_at
+    FROM user_roles ur
+    JOIN roles r ON r.id = ur.role_id
+    WHERE ur.user_id = ${userId}
+    ORDER BY r.name
+  `
+  return roles
 }
 
 // Get users with a specific role
 export async function getUsersByRole(roleId: string) {
+  const sql = getDb()
   const users = await sql`
-    SELECT id, email, name, custom_role_id
-    FROM users
-    WHERE custom_role_id = ${roleId}
+    SELECT u.id, u.email, u.name, ur.assigned_at
+    FROM user_roles ur
+    JOIN users u ON u.id = ur.user_id
+    WHERE ur.role_id = ${roleId}
+    ORDER BY u.name
   `
   return users
+}
+
+// Set all roles for a user (replace existing)
+export async function setUserRoles(userId: string, roleIds: string[], assignedBy?: string) {
+  const sql = getDb()
+  await sql`DELETE FROM user_roles WHERE user_id = ${userId}`
+  for (const roleId of roleIds) {
+    await sql`
+      INSERT INTO user_roles (user_id, role_id, assigned_by)
+      VALUES (${userId}, ${roleId}, ${assignedBy || null})
+    `
+  }
 }

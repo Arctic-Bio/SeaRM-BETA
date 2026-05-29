@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!type || type === "crew") {
       const crew = await sql`
         SELECT id, first_name, last_name, country, status
-        FROM crew_applications
+        FROM crew
         WHERE (first_name || ' ' || last_name) ILIKE ${pattern}
            OR email ILIKE ${pattern}
         ORDER BY first_name ASC

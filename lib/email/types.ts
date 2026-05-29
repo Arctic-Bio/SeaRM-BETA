@@ -99,7 +99,7 @@ export interface TriggerConditions {
 
 export type RecipientType =
   | "crew_member"
-  | "applicant"
+  | "applicant" // kept for backwards compat
   | "admin"
   | "custom_email"
   | "event_data_field"
@@ -109,8 +109,8 @@ export type RecipientType =
 // ============================================================================
 
 export type SystemEvent =
-  // Application lifecycle
-  | "crew_application_received"
+  // Crew lifecycle
+  | "crew_application_received" // kept for backwards compat
   | "crew_application_approved"
   | "crew_application_rejected"
   | "crew_application_waitlisted"
@@ -144,11 +144,11 @@ export type SystemEvent =
   | "custom_event"
 
 export const SYSTEM_EVENTS: { value: SystemEvent; label: string; category: string; description: string }[] = [
-  // Application lifecycle
-  { value: "crew_application_received", label: "Application Received", category: "Applications", description: "When a new crew application is submitted" },
-  { value: "crew_application_approved", label: "Application Approved", category: "Applications", description: "When an application is approved" },
-  { value: "crew_application_rejected", label: "Application Rejected", category: "Applications", description: "When an application is rejected" },
-  { value: "crew_application_waitlisted", label: "Application Waitlisted", category: "Applications", description: "When an application is waitlisted" },
+  // Crew lifecycle
+  { value: "crew_application_received", label: "Crew Member Added", category: "Crew", description: "When a new crew member is added to the system" },
+  { value: "crew_application_approved", label: "Crew Member Approved", category: "Crew", description: "When a crew member is approved" },
+  { value: "crew_application_rejected", label: "Crew Member Rejected", category: "Crew", description: "When a crew member is rejected" },
+  { value: "crew_application_waitlisted", label: "Crew Member Waitlisted", category: "Crew", description: "When a crew member is waitlisted" },
   // Onboarding
   { value: "crew_onboarding_started", label: "Onboarding Started", category: "Onboarding", description: "When crew onboarding begins" },
   { value: "crew_onboarding_stage_changed", label: "Onboarding Stage Changed", category: "Onboarding", description: "When onboarding moves to the next stage" },

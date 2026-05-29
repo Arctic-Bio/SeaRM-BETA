@@ -13,9 +13,9 @@ export async function GET(
         ca.first_name || ' ' || ca.last_name as assigned_crew_name,
         ca.email as assigned_crew_email
       FROM crew_positions cp
-      LEFT JOIN crew_applications ca ON cp.assigned_crew_id = ca.id
+      LEFT JOIN crew ca ON cp.assigned_crew_id = ca.id
       WHERE cp.voyage_id = ${id}
-      ORDER BY cp.department, cp.position_name
+      ORDER BY p.department, p.name
     `
     return NextResponse.json({ data: positions })
   } catch (error) {
@@ -32,14 +32,14 @@ export async function POST(
     const { id } = await params
     const sql = getDb()
     const body = await request.json()
-    const { position_name, department = "", required_skills = [], notes = "" } = body
+    const { position_id, department = "", required_skills = [], notes = "" } = body
 
     if (!position_name) {
       return NextResponse.json({ error: "Position name is required" }, { status: 400 })
     }
 
     const result = await sql`
-      INSERT INTO crew_positions (voyage_id, position_name, department, required_skills, notes)
+      INSERT INTO crew_positions (voyage_id, position_id, department, required_skills, notes)
       VALUES (${id}, ${position_name}, ${department}, ${JSON.stringify(required_skills)}, ${notes})
       RETURNING *
     `

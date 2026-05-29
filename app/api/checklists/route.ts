@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 const STANDARD_TEMPLATE = [
   { key: "passport_verified", label: "Passport Verified", done: false },
@@ -33,11 +32,12 @@ const TEMPLATES: Record<string, { key: string; label: string; done: boolean }[]>
 
 export async function GET(req: NextRequest) {
   try {
+    const sql = getDb()
     const crewId = req.nextUrl.searchParams.get("crew_id")
     const voyageId = req.nextUrl.searchParams.get("voyage_id")
     let query = `SELECT cl.*, ca.first_name, ca.last_name, v.voyage_name
       FROM onboarding_checklists cl
-      LEFT JOIN crew_applications ca ON cl.crew_id = ca.id
+      LEFT JOIN crew ca ON cl.crew_id = ca.id
       LEFT JOIN voyages v ON cl.voyage_id = v.id WHERE 1=1`
     const params: any[] = []
     let idx = 0
@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     if (!body.crew_id) {
       return NextResponse.json({ error: "crew_id is required" }, { status: 400 })

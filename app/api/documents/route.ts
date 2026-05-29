@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(req: NextRequest) {
   try {
+    const sql = getDb()
     const crewId = req.nextUrl.searchParams.get("crew_id")
     const shipId = req.nextUrl.searchParams.get("ship_id")
     const expiring = req.nextUrl.searchParams.get("expiring") // days
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const formData = await req.formData()
     const file = formData.get("file") as File
     const crewId = formData.get("crew_id") as string | null

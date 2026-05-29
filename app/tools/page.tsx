@@ -732,7 +732,7 @@ export default function ToolsPage() {
                         <Textarea
                           value={rawQuery}
                           onChange={(e) => setRawQuery(e.target.value)}
-                          placeholder="SELECT * FROM crew_applications WHERE status = 'approved' LIMIT 25"
+                          placeholder="SELECT * FROM crew WHERE status = 'approved' LIMIT 25"
                           className="font-mono text-xs min-h-32 resize-y"
                           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) executeQuery() }}
                         />

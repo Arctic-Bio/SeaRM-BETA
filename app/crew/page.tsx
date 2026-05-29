@@ -6,10 +6,10 @@ export default function CrewPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Crew Applications
+            Crew Management
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review, filter, and manage all crew volunteer applications.
+            Manage all crew members, from new applications to active volunteers.
           </p>
         </div>
       </div>

@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const values: unknown[] = []
     let p = 1
 
-    const allowed = ["position_name", "department", "required_skills", "min_skill_level", "priority", "status", "assigned_crew_id", "notes", "is_paid", "hourly_rate", "daily_rate", "estimated_hours", "pay_config_id"]
+    const allowed = ["position_id", "ship_id", "required_skills", "priority", "status", "assigned_crew_id", "notes", "is_paid", "hourly_rate", "daily_rate", "estimated_hours", "pay_config_id"]
     for (const key of allowed) {
       if (key in body) {
         const val = key === "required_skills" ? JSON.stringify(body[key]) : body[key]

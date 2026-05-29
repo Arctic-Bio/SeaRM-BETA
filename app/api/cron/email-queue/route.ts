@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { sendMail } from "@/lib/email/transport"
 import type { EmailProvider } from "@/lib/email/types"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 /**
  * GET /api/cron/email-queue
@@ -26,6 +25,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const sql = getDb()
     // 1. Process pending emails scheduled for now or past
     const pending = await sql`
       SELECT q.*, 

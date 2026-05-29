@@ -6,18 +6,18 @@ export async function GET() {
     const sql = getDb()
 
     // Crew counts
-    const [totalResult] = await sql`SELECT COUNT(*) as count FROM crew_applications`
+    const [totalResult] = await sql`SELECT COUNT(*) as count FROM crew`
 
     const statusCounts = await sql`
       SELECT status, COUNT(*) as count 
-      FROM crew_applications 
+      FROM crew 
       GROUP BY status 
       ORDER BY count DESC
     `
 
     const countryCounts = await sql`
       SELECT country, COUNT(*) as count 
-      FROM crew_applications 
+      FROM crew 
       WHERE country != '' AND country IS NOT NULL
       GROUP BY country 
       ORDER BY count DESC 
@@ -26,24 +26,24 @@ export async function GET() {
 
     const departmentCounts = await sql`
       SELECT department_preference, COUNT(*) as count 
-      FROM crew_applications 
+      FROM crew 
       WHERE department_preference != '' AND department_preference IS NOT NULL
       GROUP BY department_preference 
       ORDER BY count DESC 
       LIMIT 10
     `
 
-    const recentApplications = await sql`
+    const recentCrewMembers = await sql`
       SELECT id, first_name, last_name, email, status, rating, country, 
              department_preference, created_at
-      FROM crew_applications 
+      FROM crew 
       ORDER BY created_at DESC 
       LIMIT 5
     `
 
     const maritimeQualCounts = await sql`
       SELECT maritime_qualifications, COUNT(*) as count 
-      FROM crew_applications 
+      FROM crew 
       WHERE maritime_qualifications != '' AND maritime_qualifications IS NOT NULL
       GROUP BY maritime_qualifications 
       ORDER BY count DESC
@@ -66,7 +66,7 @@ export async function GET() {
         COUNT(CASE WHEN skill_welding != '' THEN 1 END) as welding,
         COUNT(CASE WHEN skill_crane_operation != '' THEN 1 END) as crane_operation,
         COUNT(CASE WHEN skill_biology_science != '' THEN 1 END) as biology_science
-      FROM crew_applications
+      FROM crew
     `
 
     // Fleet stats
@@ -86,7 +86,7 @@ export async function GET() {
       SELECT t.id, t.title, t.priority, t.status, t.due_date, t.task_type,
              ca.first_name, ca.last_name
       FROM tasks t
-      LEFT JOIN crew_applications ca ON t.crew_id = ca.id
+      LEFT JOIN crew ca ON t.crew_id = ca.id
       WHERE t.status NOT IN ('completed', 'cancelled')
       ORDER BY 
         CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
@@ -99,7 +99,7 @@ export async function GET() {
       SELECT a.id, a.activity_type, a.title, a.description, a.actor_name, a.created_at,
              ca.first_name, ca.last_name
       FROM activities a
-      LEFT JOIN crew_applications ca ON a.crew_id = ca.id
+      LEFT JOIN crew ca ON a.crew_id = ca.id
       ORDER BY a.created_at DESC
       LIMIT 8
     `
@@ -107,15 +107,17 @@ export async function GET() {
     // Pipeline counts (for funnel)
     const pipelineCounts = await sql`
       SELECT 
-        COUNT(CASE WHEN status = 'new_applicant' THEN 1 END) as new_applicant,
-        COUNT(CASE WHEN status = 'reviewed' THEN 1 END) as reviewed,
-        COUNT(CASE WHEN status = 'awaiting_interview' THEN 1 END) as awaiting_interview,
-        COUNT(CASE WHEN status = 'interview_completed' THEN 1 END) as interview_completed,
-        COUNT(CASE WHEN status = 'candidate' THEN 1 END) as candidate,
-        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
-        COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed,
+        COUNT(CASE WHEN status = 'application' THEN 1 END) as application,
+        COUNT(CASE WHEN status = 'screening' THEN 1 END) as screening,
+        COUNT(CASE WHEN status = 'interview' THEN 1 END) as interview,
+        COUNT(CASE WHEN status = 'verified' THEN 1 END) as verified,
+        COUNT(CASE WHEN status = 'volunteer' THEN 1 END) as volunteer,
+        COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+        COUNT(CASE WHEN status = 'standby' THEN 1 END) as standby,
+        COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive,
+        COUNT(CASE WHEN status = 'alumni' THEN 1 END) as alumni,
         COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected
-      FROM crew_applications
+      FROM crew
     `
 
     // Overdue tasks
@@ -139,7 +141,7 @@ export async function GET() {
         department: r.department_preference,
         count: parseInt(r.count as string),
       })),
-      recentApplications,
+      recentApplications: recentCrewMembers,
       maritimeQualCounts: maritimeQualCounts.map((r) => ({
         qualification: r.maritime_qualifications,
         count: parseInt(r.count as string),

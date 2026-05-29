@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { getDb } from "@/lib/db"
 
 export async function GET() {
   try {
+    const sql = getDb()
     // Get all crew with their availability and assignments
     const crew = await sql`
       SELECT ca.id, ca.first_name, ca.last_name, ca.availability_start_date, ca.duration, ca.status, ca.department_preference
-      FROM crew_applications ca
-      WHERE ca.status IN ('confirmed', 'onboarded', 'signed_on', 'in_progress', 'new')
+      FROM crew ca
+      WHERE ca.status IN ('verified', 'volunteer', 'active', 'standby', 'application')
       ORDER BY ca.first_name, ca.last_name
     `
 

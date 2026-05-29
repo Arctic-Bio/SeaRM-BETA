@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = useCallback((permission: string): boolean => {
     if (!permissions) return false
-    if (permissions.isAdmin) return true // Admins have all permissions
-    return permissions.permissions.includes(permission)
+    if (permissions.isAdmin || permissions.isSysadmin) return true
+    return (permissions.allPermissions ?? []).includes(permission)
   }, [permissions])
 
   const login = useCallback(async (email: string, password: string) => {

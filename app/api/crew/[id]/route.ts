@@ -9,7 +9,7 @@ export async function GET(
     const { id } = await params
     const sql = getDb()
     const result = await sql`
-      SELECT * FROM crew_applications WHERE id = ${id}
+      SELECT * FROM crew WHERE id = ${id}
     `
 
     if (result.length === 0) {
@@ -39,7 +39,7 @@ export async function PATCH(
 
     if (status !== undefined) {
       await sql`
-        UPDATE crew_applications 
+        UPDATE crew 
         SET status = ${status}, updated_at = now()
         WHERE id = ${id}
       `
@@ -47,7 +47,7 @@ export async function PATCH(
 
     if (rating !== undefined) {
       await sql`
-        UPDATE crew_applications 
+        UPDATE crew 
         SET rating = ${rating}, updated_at = now()
         WHERE id = ${id}
       `
@@ -55,14 +55,14 @@ export async function PATCH(
 
     if (notes !== undefined) {
       await sql`
-        UPDATE crew_applications 
+        UPDATE crew 
         SET notes = ${notes}, updated_at = now()
         WHERE id = ${id}
       `
     }
 
     const updated = await sql`
-      SELECT * FROM crew_applications WHERE id = ${id}
+      SELECT * FROM crew WHERE id = ${id}
     `
 
     return NextResponse.json({ data: updated[0] })
@@ -79,7 +79,7 @@ export async function DELETE(
   try {
     const { id } = await params
     const sql = getDb()
-    await sql`DELETE FROM crew_applications WHERE id = ${id}`
+    await sql`DELETE FROM crew WHERE id = ${id}`
     return NextResponse.json({ success: true })
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error"

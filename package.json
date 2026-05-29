@@ -1,7 +1,27 @@
 {
-  "name": "my-project",
-  "version": "0.1.0",
-  "private": true,
+  "name": "searm",
+  "version": "2.1.0",
+  "description": "Enterprise-grade maritime crew management and operations platform",
+  "author": "SeaRM Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/searm.git"
+  },
+  "homepage": "https://searm.dev",
+  "bugs": {
+    "url": "https://github.com/your-org/searm/issues"
+  },
+  "keywords": [
+    "maritime",
+    "crew management",
+    "fleet operations",
+    "voyage planning",
+    "invoicing",
+    "next.js",
+    "typescript",
+    "postgresql"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

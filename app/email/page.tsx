@@ -551,7 +551,7 @@ function TriggersTab() {
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="crew_member" className="text-xs">Crew Member</SelectItem>
-                      <SelectItem value="applicant" className="text-xs">Applicant</SelectItem>
+                      <SelectItem value="applicant" className="text-xs">Crew Member</SelectItem>
                       <SelectItem value="admin" className="text-xs">Admin</SelectItem>
                       <SelectItem value="custom_email" className="text-xs">Custom Email</SelectItem>
                       <SelectItem value="event_data_field" className="text-xs">Event Data Field</SelectItem>

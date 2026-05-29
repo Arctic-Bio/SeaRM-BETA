@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET() {
   try {
+    const sql = getDb()
     const rows = await sql`SELECT key, value FROM site_settings`
     const settings: Record<string, string> = {}
     for (const r of rows) settings[r.key as string] = r.value as string
@@ -17,6 +17,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session || session.role !== "sysadmin") {
       return NextResponse.json({ error: "Sysadmin only" }, { status: 403 })

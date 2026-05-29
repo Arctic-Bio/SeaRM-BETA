@@ -12,7 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         ca.first_name, ca.last_name, ca.email, ca.status as crew_status,
         ca.department_preference
       FROM crew_checkins cc
-      INNER JOIN crew_applications ca ON ca.id = cc.crew_id
+      INNER JOIN crew ca ON ca.id = cc.crew_id
       WHERE (cc.ship_id = ${id} OR cc.voyage_id IN (SELECT v.id FROM voyages v WHERE v.ship_id = ${id}))
       ORDER BY cc.crew_id, cc.checked_at DESC
     `
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         cr.first_name, cr.last_name, cr.email,
         v.voyage_name
       FROM crew_assignments ca2
-      INNER JOIN crew_applications cr ON cr.id = ca2.crew_id
+      INNER JOIN crew cr ON cr.id = ca2.crew_id
       INNER JOIN voyages v ON v.id = ca2.voyage_id
       WHERE v.ship_id = ${id}
         AND ca2.status IN ('assigned', 'travel', 'on_board', 'active')

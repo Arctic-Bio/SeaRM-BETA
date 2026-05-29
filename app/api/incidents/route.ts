@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(req: NextRequest) {
   try {
+    const sql = getDb()
     const status = req.nextUrl.searchParams.get("status")
     const severity = req.nextUrl.searchParams.get("severity")
     const voyageId = req.nextUrl.searchParams.get("voyage_id")
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     if (!body.title) return NextResponse.json({ error: "Title is required" }, { status: 400 })
     const result = await sql.query(

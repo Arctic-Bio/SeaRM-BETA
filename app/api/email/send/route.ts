@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { renderTemplate } from "@/lib/email/template-engine"
 import { sendMail } from "@/lib/email/transport"
 import type { EmailProvider } from "@/lib/email/types"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 /**
  * POST /api/email/send
@@ -13,6 +12,7 @@ const sql = neon(process.env.DATABASE_URL!)
  */
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     const { action } = body
 

@@ -6,16 +6,16 @@
 
 <p align="center">
   <strong>Enterprise-Grade Maritime Crew Management & Operations Platform</strong><br/>
-  Full-stack system for crew applications, fleet management, voyage operations, document compliance, embeddable widgets, automated extensions, and more.
+  Full-stack system for crew lifecycle management, fleet operations, voyage planning, document compliance, automated extensions, invoicing, and more.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16.2-000?logo=next.js" alt="Next.js 16" />
-  <img src="https://img.shields.io/badge/React-19.2-61DAFB?logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/Next.js-16-000?logo=next.js" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=fff" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4.2-06B6D4?logo=tailwindcss&logoColor=fff" alt="Tailwind CSS 4" />
+  <img src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=fff" alt="Tailwind CSS 4" />
   <img src="https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=fff" alt="Neon PostgreSQL" />
-  <img src="https://img.shields.io/badge/shadcn/ui-Components-000?logo=shadcnui" alt="shadcn/ui" />
+  <img src="https://img.shields.io/badge/shadcn%2Fui-Components-000?logo=shadcnui" alt="shadcn/ui" />
   <img src="https://img.shields.io/badge/License-MIT-22c55e" alt="MIT License" />
 </p>
 
@@ -25,21 +25,13 @@
 
 - [Overview](#overview)
 - [Features](#features)
-- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
-- [Environment Variables](#environment-variables)
-- [Database Schema](#database-schema)
-- [Pages & Routes](#pages--routes)
+- [Architecture](#architecture)
+- [Crew Lifecycle System](#crew-lifecycle-system)
 - [API Reference](#api-reference)
-- [Widget Builder](#widget-builder)
-- [Extensions System](#extensions-system)
-- [Data Export](#data-export)
-- [Email System](#email-system)
-- [Authentication & Roles](#authentication--roles)
-- [Single Sign-On (SSO)](#single-sign-on-sso)
+- [Database Schema](#database-schema)
 - [Deployment](#deployment)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -47,260 +39,98 @@
 
 ## Overview
 
-SeaRM (Sea Resource Manager) is a comprehensive, production-ready platform purpose-built for maritime organizations that manage crews, fleets, voyages, and operational compliance. It replaces spreadsheets, email chains, and disconnected tools with a single unified system.
+SeaRM (Sea Resource Manager) is a comprehensive, production-ready platform purpose-built for maritime organizations that manage crews, fleets, voyages, and operational compliance. It consolidates crew applications, vessel management, assignment tracking, invoicing, document compliance, and automated workflows into a single unified system.
 
-**Key differentiators:**
+**Key Differentiators:**
 
-- **Full-stack Next.js 16** with App Router, React 19, and Tailwind CSS 4
-- **63-table PostgreSQL schema** covering every aspect of maritime operations and crew invoicing
-- **Widget Builder** for creating embeddable, styled data views for external websites
-- **Extensions System** with event hooks, cron jobs, and 5 pre-made automations
-- **Role-based access** with 4 tiers: Sysadmin, Admin, Coordinator, Crew
+- **Crew Lifecycle Integrated** - Unified crew model flowing through 10-stage lifecycle: application → screening → interview → verified → volunteer → active → standby → inactive → alumni/rejected
+- **Full-Stack Next.js 16** with App Router, React 19, TypeScript, and Tailwind CSS 4
+- **63-Table PostgreSQL Schema** covering every aspect of maritime operations
+- **Enterprise RBAC** with staff-only API protection and granular permission system
 - **Crew Portal** for self-service document uploads, e-signatures, and onboarding tracking
-- **Email Automation** with template engine, trigger-based sending, and queue management
-- **Data Export** supporting 18+ data sources (all 63 tables) in CSV or JSON with batch downloads
-- **Custom Query Builder** for ad-hoc data exploration with visual SQL composition
-- **Crew Invoicing System** with CSV import, hour tracking, automatic invoice generation, and payment management
-- **Interactive Database Schema Visualization** showing all entities, relationships, and columns with draggable nodes
-- **Live Vessel Map** with multi-source tracking, weather overlays, and comprehensive filtering
-- **Enterprise SSO** with OAuth2 and SAML2 support for seamless enterprise authentication
+- **Invoicing System** with CSV import, hour tracking, automatic invoice generation, and payment management
+- **Extensions System** with event hooks, cron jobs, and webhook automation
+- **Email Automation** with templates, triggers, and queue management
+- **Data Export** supporting 18+ data sources in CSV/JSON with batch downloads
+- **Custom Query Builder** for ad-hoc visual SQL composition
 
 ---
 
 ## Features
 
-### Crew Management
+### Crew Management & Lifecycle
 | Feature | Description |
 |---|---|
-| **Application Pipeline** | Multi-stage application workflow with kanban board, status tracking, and reviewer assignment |
-| **15-Skill Rating System** | Star-rated skill assessments across navigation, engineering, safety, medical, and more |
-| **Crew Profiles** | Full profiles with personal details, emergency contacts, skill ratings, and assignment history |
-| **Crew Tags** | Custom tagging system for categorization, search, and filtering |
-| **Check-Ins** | Periodic crew check-in logging with notes, location, and status tracking |
-| **Sea Time Records** | Track accumulated sea time per crew member with voyage linkage |
-| **Availability Tracking** | Crew availability calendar with date ranges and status indicators |
+| **Crew Pipeline (Kanban)** | 10-stage application workflow with kanban board and dynamic column pagination |
+| **Crew Profiles** | Complete profiles with skills, qualifications, ratings, assignments, and documents |
+| **Position Management** | Define crew positions per voyage with skill requirements and auto-matching |
+| **Availability Tracking** | Crew availability calendar with date ranges and heatmap visualization |
+| **Status Lifecycle** | Unified crew model: application → screening → interview → verified → volunteer → active → standby → inactive → alumni/rejected |
+| **Batch Import** | CSV upload with column mapping, duplicate detection (skip/merge), and row-level error tracking |
+| **Custom Fields** | Organization-defined custom fields with support for multiple data types and grouping |
 
 ### Fleet & Voyage Operations
 | Feature | Description |
 |---|---|
-| **Ship Registry** | Full vessel database with type, flag, tonnage, capacity, home port, and build year. Inline editing with sectioned form (Identity, Registration, Specifications, Notes) |
-| **Ship Editing** | Edit any ship via pencil icon on hover. Pre-populated form with all fields, activity logging on save |
-| **Voyage Management** | Plan and track voyages with ports, dates, mission types, and crew assignments |
-| **Position Management** | Define crew positions per voyage with skill requirements and auto-matching |
+| **Ship Registry** | Full vessel database with specifications, capacity, and maintenance tracking |
+| **Voyage Management** | Plan and track voyages with ports, dates, crew assignments, and mission types |
 | **Crew Assignments** | Assign crew to voyages with role, status, performance reviews, and date tracking |
-| **Ship Maintenance** | Track maintenance schedules, costs, completion status, and technician assignments |
-| **Ship Supplies** | Inventory management for vessel supplies with quantities, costs, and reorder tracking |
-
-### Live Vessel Map
-| Feature | Description |
-|---|---|
-| **Multi-Source Tracking** | Aggregate vessel positions from AISHub, MarineTraffic, VesselFinder, AIS Stream (WebSocket), custom REST APIs, and internal fleet |
-| **Live/Passthrough Mode** | External source data displayed in-memory without saving to database -- only internal fleet persists |
-| **Viewport Rendering** | Only renders markers for vessels within the current viewport (max 800) for performance with thousands of vessels |
-| **Weather Overlays** | Real-time weather tile layers: RainViewer (free precipitation radar), OpenWeatherMap (wind/temp/clouds/pressure), NOAA NEXRAD (free US radar), Ocean Depth (GEBCO/NCEI bathymetry), and custom tile URLs |
-| **Weather Provider Management** | Add/remove weather providers, toggle individual layers, global opacity slider, API key management, bring-your-own tile URLs |
-| **Vessel Search** | Search across all loaded vessels (DB + live) by name, MMSI, IMO, callsign, flag, destination, or source |
-| **Ship Type Filtering** | Filter by Cargo, Tanker, Passenger, Fishing, Tug, Pleasure, Military, SAR, and more |
-| **Multiple Base Maps** | Dark Ocean, Satellite, Nautical, and Light tile layers |
-| **Auto-Refresh** | 30-second refresh cycle with pause/resume, manual refresh, and countdown timer |
-
-### Crew Availability Heatmap
-| Feature | Description |
-|---|---|
-| **Heatmap Calendar** | Traditional month-grid calendar with days color-coded by crew availability count |
-| **Heat Scale** | White = no crew available, progressively darker red = more crew available on that day |
-| **Day Tooltips** | Hover any day to see a list of available crew members with their departments |
-| **Assignment Awareness** | Automatically subtracts days blocked by active assignments from availability windows |
-| **Month Navigation** | Navigate between months with arrows or jump to today |
-| **Timeline Toggle** | Switch between Gantt-style timeline view and heatmap calendar view |
+| **Ship Maintenance** | Track maintenance schedules with completion status and technician assignments |
+| **Availability Heatmap** | Interactive calendar with crew availability count, day tooltips, and timeline view |
 
 ### Safety & Compliance
 | Feature | Description |
 |---|---|
-| **Incident Tracking** | Report and manage safety incidents with severity, category, location, and resolution workflow |
-| **Document Management** | Upload, verify, and track crew documents with expiration monitoring |
-| **E-Signatures** | Legally-binding electronic signature collection with audit trail |
-| **Onboarding Checklists** | Configurable checklists for new crew onboarding with progress tracking |
-| **Signature Audit Log** | Full audit trail of all e-signature events for compliance |
+| **Document Management** | Upload, verify, track crew documents with expiration monitoring |
+| **E-Signatures** | Legally-binding electronic signature collection with audit trail and timestamp |
+| **Onboarding Checklists** | Configurable checklist templates with progress tracking and status indicators |
+| **Incident Tracking** | Safety incident reporting with severity, resolution workflow, and history |
 
-### Widget Builder
+### Invoicing & Payments
 | Feature | Description |
 |---|---|
-| **6 View Types** | Table, Cards, List, Stats, Timeline, Minimal -- all adaptive to any column count |
-| **6 Style Presets** | Modern, Ocean, Minimal, Vibrant, Corporate, Seafoam -- bulletproof CSS isolation |
-| **Live Preview** | Real-time iframe preview updates on every setting change with debounced fetching |
-| **5 Pre-made Templates** | Fleet Overview, Active Voyages, Crew Pipeline, Safety Dashboard, Operations Board |
-| **Embed Code Generation** | Script tag and iframe embed snippets with access token security |
-| **Widget Security** | Per-widget access tokens, rate limiting, domain whitelisting, and access logging |
-
-### Extensions System
-| Feature | Description |
-|---|---|
-| **Event Hooks** | Subscribe to application lifecycle events (crew, voyages, documents, maintenance) |
-| **Cron Jobs** | Schedule recurring tasks (daily compliance checks, weekly maintenance generation) |
-| **JSON Manifests** | Install extensions via JSON manifest -- no code deployment required |
-| **5 Default Extensions** | Slack Notifier, Document Expiry Monitor, Weather Briefing, Onboarding Automator, Maintenance Scheduler |
-| **Configuration UI** | Admin-editable settings per extension with validation and type-safe schemas |
-| **Permission System** | Granular permissions (read/write per resource, send:email, access:api, register:hooks) |
-| **Activity Logging** | Full extension activity log with errors, config changes, and execution traces |
-
-### Email System
-| Feature | Description |
-|---|---|
-| **Template Engine** | Create and manage email templates with variable interpolation |
-| **Trigger-Based Sending** | Configure automated emails on events (application received, status changed, etc.) |
-| **Email Queue** | Queued email delivery with retry logic and status tracking |
-| **Provider Management** | Connect external SMTP providers (nodemailer-based) |
-| **Encrypted Credentials** | Provider credentials encrypted at rest |
+| **Invoice Generation** | Automatic invoice generation from assignments and verified hours |
+| **Hour Tracking** | Log, track, and verify crew working hours with rate management |
+| **Pay Configuration** | Flexible hourly/daily rates per position type (volunteer vs. paid) |
+| **Invoice Settings** | Customizable numbering, templates, company branding, and email automation |
 
 ### Admin Tools
 | Feature | Description |
 |---|---|
-| **Custom Query Builder** | Visual SQL composer with table joins, filters (AND/OR), comparisons, and saved queries |
-| **Data Export** | Export 18+ data sources (all 63 database tables) in CSV or JSON with batch downloads |
-| **User Management** | Create, edit, and deactivate user accounts with role assignment |
-| **Site Settings** | Global configuration for required documents, feature flags, and system behavior |
-| **Activity Log** | System-wide audit trail of all user and system actions |
-| **Global Search** | Cross-entity search across crew, ships, voyages, and tasks |
-| **Database Schema Visualization** | Advanced interactive ERD showing all entities, columns, data types, and foreign key relationships with color-coded categories (admin-only) |
+| **Query Builder** | Visual SQL composer with joins, filters, comparisons, and saved queries |
+| **Data Export** | Export all 63 database tables in CSV or JSON with batch downloads |
+| **User Management** | Create, edit, deactivate accounts with role assignment and permission control |
+| **Activity Log** | System-wide audit trail of all user and extension actions |
+| **Settings Dashboard** | Global configuration, feature flags, site settings management |
 
 ### Crew Portal
 | Feature | Description |
 |---|---|
-| **Self-Service Dashboard** | Crew members view their profile, documents, requirements, and onboarding progress |
+| **Self-Service Dashboard** | Crew view profile, documents, requirements, and onboarding progress |
 | **Document Uploads** | Upload required documents with categorization and version tracking |
-| **E-Signature Interface** | Sign documents electronically by typing legal name |
-| **Onboarding Timeline** | Visual progress tracker for onboarding completion |
+| **E-Signature Interface** | Sign documents electronically with audit trail |
+| **Onboarding Timeline** | Visual progress tracker for onboarding completion with tips |
 | **Mobile-Responsive** | Full mobile support for crew on vessels |
 
-### Crew Management & Invoicing (Advanced)
-| Feature | Description |
-|---|---|
-| **CSV Position Upload** | Bulk crew position import with validation, duplicate detection, and error reporting |
-| **Hour Tracking** | Log and track crew working hours with verification workflow and rate assignment |
-| **Automatic Invoice Generation** | Generate invoices from assignments, hours, and custom line items |
-| **Invoice Management** | Draft, issue, paid, and cancelled statuses with full audit trail |
-| **Pay Configuration** | Set hourly/daily rates per position type with volunteer vs. paid options |
-| **Invoice Settings** | Configurable numbering, payment terms, company info, templates, and email automation |
-| **Hour Verification** | Manager/admin approval workflow with optional rate adjustments |
-| **CSV Upload Audit** | Track all uploads with status, error details, and retry capability |
+---
 
-
-
-## Architecture
-
-```
-searm/
-├── app/                              # Next.js 16 App Router
-│   ├── api/                          # 63 API route handlers
-│   │   ├── auth/                     # Authentication (login, register, session, logout)
-│   │   ├── crew/                     # Crew CRUD + check-ins, sea time, tags
-│   │   ├── ships/                    # Ships CRUD + crew, maintenance, supplies
-│   │   ├── voyages/                  # Voyages CRUD + position management
-│   │   ├── assignments/              # Crew-voyage assignments
-│   │   ├── tasks/                    # Task management
-│   │   ├── incidents/                # Safety incident tracking
-│   │   ├── documents/                # Document management + e-signatures
-│   │   ├── email/                    # Email templates, triggers, queue, providers
-│   │   ├── extensions/               # Extension install, config, logs, validation
-│   │   ├── widgets/                  # Widget CRUD, preview, embed serving
-│   │   ├── export/                   # Batch data export (18+ sources)
-│   │   ├── tools/                    # Custom query builder, schema, saved queries
-│   │   ├── kanban/                   # Kanban board API
-│   │   ├── portal/                   # Crew portal endpoints
-│   │   └── ...                       # Settings, stats, search, uploads, etc.
-│   ├── crew/                         # Crew list + detail pages
-│   ├── ships/                        # Ship registry + detail pages
-│   ├── voyages/                      # Voyage list + detail pages
-│   ├── pipeline/                     # Application kanban pipeline
-│   ├── tasks/                        # Task management
-│   ├── incidents/                    # Safety incidents
-│   ├── positions/                    # Position management
-│   ├── integrations/                 # Widget Builder (create, manage, templates)
-│   ├── extensions/                   # Extensions (install, configure, logs, docs)
-│   ├── export/                       # Data export dashboard
-│   ├── email/                        # Email system management
-│   ├── tools/                        # Custom query builder
-│   ├── portal/                       # Crew self-service portal
-│   ├── settings/                     # System settings
-│   ├── users/                        # User management
-│   ├── how-to/                       # Interactive documentation
-│   ├── onboarding/                   # Onboarding management
-│   ├── availability/                 # Crew availability (timeline + heatmap)
-│   ├── map/                          # Live vessel map with weather
-│   ├── upload/                       # Bulk CSV upload
-│   ├── login/                        # Authentication
-│   └── page.tsx                      # Dashboard with stats + charts
-├── components/                       # Shared React components
-│   ├── ui/                           # shadcn/ui component library
-│   ├── app-sidebar.tsx               # Navigation sidebar
-│   ├── auth-provider.tsx             # Auth context provider
-│   ├── dashboard-shell.tsx           # Layout wrapper
-│   ├── crew-table.tsx                # Reusable crew data table
-│   ├── csv-uploader.tsx              # Bulk CSV import
-│   ├── crew-heatmap-calendar.tsx     # Availability heatmap calendar
-│   ├── map/                          # Map components
-│   │   ├── vessel-map.tsx            # Leaflet map with weather tile layers
-│   │   ├── vessel-list-panel.tsx     # Searchable vessel list
-│   │   ├── source-panel.tsx          # Data source management
-│   │   ├── weather-panel.tsx         # Weather provider management
-│   │   └── layers-panel.tsx          # Base map layer selector
-│   ├── signature-pad.tsx             # E-signature capture
-│   ├── skill-badge.tsx               # Skill rating display
-│   ├── star-rating.tsx               # Star rating input
-│   ├── status-badge.tsx              # Status indicator badges
-│   └── ...                           # Activity timeline, crew popover, etc.
-├── lib/                              # Core business logic
-│   ├── db.ts                         # Database connection + schema definitions
-│   ├── auth.ts                       # JWT auth with bcrypt password hashing
-│   ├── uuid.ts                       # UUID generation utilities
-│   ├── utils.ts                      # Shared utilities (cn, formatters)
-│   ├── email/                        # Email subsystem
-│   │   ├── index.ts                  # Public API
-│   │   ├── transport.ts              # SMTP transport layer
-│   │   ├── template-engine.ts        # Variable interpolation engine
-│   │   ├── encryption.ts             # Credential encryption
-│   │   ├── events.ts                 # Event-triggered email sending
-│   │   └── types.ts                  # Type definitions
-│   ├── extensions/                   # Extension subsystem
-│   │   ├── index.ts                  # Public API
-│   │   ├── manager.ts               # Install, activate, configure, uninstall
-│   │   ├── dispatcher.ts            # Event hook dispatcher
-│   │   ├── validator.ts             # JSON manifest validation
-│   │   └── types.ts                  # Type definitions
-│   ├── map/                          # Map subsystem
-│   │   ├── types.ts                  # Vessel position types, ship categories
-│   │   ├── source-config.ts          # Source type definitions + parsers
-│   │   ├── weather-config.ts         # Weather provider registry + RainViewer API
-│   │   └── upsert.ts                 # DB upsert for internal fleet positions
-│   └── widgets/                      # Widget subsystem
-│       ├── index.ts                  # Public API
-│       ├── data-sources.ts           # Data source definitions + column schemas
-│       ├── query-builder.ts          # SQL query builder from widget config
-│       ├── renderer.ts              # HTML renderer (6 view types)
-│       ├── style-generator.ts       # CSS generator (6 presets, scoped + isolated)
-│       ├── embed-generator.ts       # Embed code generator (script + iframe)
-│       └── types.ts                  # Type definitions
-└── public/                           # Static assets
-```
-
-### Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | **Framework** | Next.js 16.2 (App Router, Turbopack) |
 | **Language** | TypeScript 5.7 |
-| **UI Library** | React 19.2 |
-| **Styling** | Tailwind CSS 4.2 + shadcn/ui |
+| **UI Framework** | React 19.2 |
+| **Styling** | Tailwind CSS 4.2 + shadcn/ui components |
 | **Database** | Neon Serverless PostgreSQL (`@neondatabase/serverless`) |
-| **Auth** | Custom JWT (jose) + bcrypt password hashing |
-| **Email** | Nodemailer with encrypted SMTP credentials |
-| **Charts** | Recharts 2.15 |
-| **Maps** | Leaflet with custom tile layers + weather overlays |
+| **Auth** | Custom JWT with bcrypt password hashing |
+| **State Management** | SWR for client-side caching |
 | **Forms** | React Hook Form + Zod validation |
-| **Data Fetching** | SWR for client-side caching and revalidation |
+| **Charts** | Recharts 2.15 |
+| **Maps** | Leaflet with custom layers |
 | **CSV Parsing** | PapaParse |
 | **Date Handling** | date-fns 4.1 |
+| **Icons** | Lucide React |
 
 ---
 
@@ -310,7 +140,7 @@ searm/
 
 - **Node.js** 18.17+ ([Download](https://nodejs.org/))
 - **pnpm** 8+ (`npm install -g pnpm`)
-- **PostgreSQL** via [Neon](https://neon.tech) (recommended) or local instance
+- **PostgreSQL** via [Neon](https://neon.tech) (recommended)
 
 ### Installation
 
@@ -324,33 +154,149 @@ pnpm install
 
 # 3. Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your database URL and auth secret
+# Edit .env.local with your database credentials
 
-# 4. Initialize the database (creates all 33 tables)
-pnpm run db:init
-
-# 5. Start the development server
+# 4. Start the development server
 pnpm dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000). On first load, you'll be prompted to create your system administrator account.
+Visit [http://localhost:3000](http://localhost:3000). On first login, you'll be prompted to create your system administrator account.
+
+### Environment Variables
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# Authentication
+AUTH_SECRET="generate-a-random-string-at-least-32-characters-long"
+# Generate with: openssl rand -base64 32
+
+# Application
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Storage (optional)
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
+```
 
 ---
 
-## Environment Variables
+## Architecture
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | Neon PostgreSQL connection string |
-| `AUTH_SECRET` | Yes | Random string for JWT signing (min 32 chars) |
-| `NEXT_PUBLIC_APP_URL` | Yes | Application URL (`http://localhost:3000` for dev) |
-| `BLOB_READ_WRITE_TOKEN` | No | Vercel Blob storage token for document uploads |
-
-```env
-DATABASE_URL="postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
-AUTH_SECRET="generate-a-random-string-at-least-32-characters-long"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
+searm/
+├── app/
+│   ├── api/                 # 40+ API route handlers
+│   │   ├── crew/            # Crew CRUD, status management
+│   │   ├── stats/           # Dashboard statistics
+│   │   ├── kanban/          # Pipeline board with pagination
+│   │   ├── export/          # Batch data export
+│   │   ├── import/          # Bulk CSV import
+│   │   ├── custom-fields/   # Custom field CRUD
+│   │   ├── invoices/        # Invoicing system
+│   │   ├── portal/          # Crew portal endpoints
+│   │   ├── auth/            # Authentication routes
+│   │   └── ...
+│   ├── crew/                # Crew list, detail pages
+│   ├── pipeline/            # Kanban board page
+│   ├── portal/              # Crew self-service portal
+│   ├── settings/            # Admin settings
+│   ├── export/              # Data export page
+│   └── page.tsx             # Dashboard
+├── components/              # Shared React components
+│   ├── ui/                  # shadcn/ui component library
+│   ├── crew-table.tsx       # Reusable crew data table
+│   ├── csv-uploader.tsx     # Bulk import interface
+│   └── ...
+├── lib/
+│   ├── db.ts                # Database + schema definitions
+│   ├── auth.ts              # JWT authentication
+│   ├── rbac/                # Role-based access control
+│   ├── backup/              # Database backup utilities
+│   ├── extensions/          # Extension system
+│   └── ...
+├── public/                  # Static assets
+└── package.json
+```
+
+---
+
+## Crew Lifecycle System
+
+SeaRM uses a unified crew model with a 10-stage lifecycle. All crew members (regardless of entry point) flow through the same stages with unified data persistence:
+
+### Status Lifecycle
+```
+application → screening → interview → verified → volunteer → active → standby → inactive → alumni/rejected
+```
+
+- **application** - Initial intake, profile creation, CV review
+- **screening** - Administrative screening, completeness check
+- **interview** - Scheduled interviews, assessment
+- **verified** - Approved for deployment, passed all checks
+- **volunteer** - Available for volunteer assignments
+- **active** - Currently assigned to a voyage/contract
+- **standby** - Available but not currently assigned
+- **inactive** - On leave or temporarily unavailable
+- **alumni** - Former crew, retained for records
+- **rejected** - Application rejected, archived
+
+### Crew Profile Model
+Every crew member has a single unified profile with:
+- Personal information (name, contact, location)
+- Skills & qualifications (15-skill rating system)
+- Maritime certifications and training
+- Assignment history
+- Document repository
+- Invoicing records
+- Custom fields
+
+All changes are audit-logged and timestamped.
+
+---
+
+## API Reference
+
+### Authentication
+```
+POST   /api/auth/login           # Login with email + password
+POST   /api/auth/register        # Create new user account
+POST   /api/auth/logout          # Clear session
+GET    /api/auth/session         # Get current user
+```
+
+### Crew Management
+```
+GET    /api/crew                 # List crew with filters, search, pagination
+POST   /api/crew                 # Create new crew member
+GET    /api/crew/[id]            # Get crew detail with position joins
+PUT    /api/crew/[id]            # Update crew member
+DELETE /api/crew/[id]            # Delete crew member
+```
+
+### Pipeline & Stats
+```
+GET    /api/kanban               # Get crew grouped by status (with pagination)
+GET    /api/stats                # Dashboard statistics (requires staffOnly auth)
+```
+
+### Data Operations
+```
+GET    /api/export               # Export data sources in CSV/JSON
+POST   /api/import               # Execute bulk import from preview
+GET    /api/custom-fields        # Get custom field definitions and values
+```
+
+### Crew Portal
+```
+GET    /api/portal               # Get crew portal data (session user only)
+GET    /api/portal/profile       # Get profile data
+PUT    /api/portal/profile       # Update own profile
+GET    /api/portal/sign          # Get documents to sign
+POST   /api/portal/sign          # Submit e-signature
+```
+
+All API endpoints enforce authentication. Staff-only endpoints (crew, stats, kanban, export) require `staffOnly` role check via `requireApiAuth({ staffOnly: true })`.
 
 ---
 
@@ -359,629 +305,148 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 SeaRM uses **63 PostgreSQL tables** organized into 9 domains:
 
 ### Core Entities
-| Table | Purpose |
-|---|---|
-| `users` | System users with roles and hashed passwords |
-| `crew_applications` | Crew applications with 15-skill star ratings |
-| `ships` | Vessel registry (name, type, flag, tonnage, capacity) |
-| `voyages` | Voyage planning (ports, dates, mission type, status) |
-| `crew_positions` | Position definitions with skill requirements |
+- `crew` - Unified crew members with all profile data and status lifecycle
+- `users` - System users with roles and permissions
+- `roles` - Role definitions (sysadmin, staff, crew)
+- `role_permissions` - Permission grants per role
+- `positions` - Position definitions with skill requirements
+- `countries` - Country reference data
 
-### Crew Operations
-| Table | Purpose |
-|---|---|
-| `crew_assignments` | Crew-to-voyage assignments with reviews |
-| `crew_sea_time` | Accumulated sea time records |
-| `crew_checkins` | Periodic check-in logs |
-| `crew_tags` | Custom crew categorization tags |
-| `onboarding_checklists` | Onboarding progress tracking |
-| `crew_pay_config` | Position type payment settings and rates |
-| `crew_hourly_logs` | Hour tracking with verification workflow |
-
-### Fleet Management
-| Table | Purpose |
-|---|---|
-| `ship_maintenance` | Maintenance schedules and completion tracking |
-| `ship_supplies` | Vessel inventory and supply management |
-| `tasks` | Operational task management with assignments |
-| `incidents` | Safety incident reports with severity and resolution |
+### Operations
+- `voyages` - Voyage planning and tracking
+- `crew_assignments` - Crew-to-voyage assignments
+- `crew_positions` - Position assignments per voyage
+- `tasks` - Operational task management
+- `incidents` - Safety incident reports
+- `onboarding_checklists` - Onboarding templates and progress
 
 ### Documents & Compliance
-| Table | Purpose |
-|---|---|
-| `documents` | Document metadata, verification, and expiration |
-| `file_storage` | File binary storage references |
-| `signature_audit_log` | E-signature event audit trail |
-| `site_settings` | Global configuration and feature flags |
+- `documents` - Document metadata and tracking
+- `file_storage` - File binary storage references
+- `signature_audit_log` - E-signature event audit trail
 
-### Invoicing & Payments
-| Table | Purpose |
-|---|---|
-| `crew_invoices` | Invoice master records with status tracking |
-| `invoice_line_items` | Detailed invoice line items |
-| `invoice_settings` | Invoice numbering, templates, and configuration |
-| `csv_uploads` | CSV upload tracking and audit trail |
+### Invoicing
+- `crew_invoices` - Invoice master records
+- `invoice_line_items` - Detailed invoice line items
+- `invoice_settings` - Invoice configuration
+- `crew_hourly_logs` - Hour tracking records
+- `crew_pay_config` - Position payment rates
 
-### Email System
-| Table | Purpose |
-|---|---|
-| `email_providers` | SMTP provider configuration (encrypted) |
-| `email_templates` | Email templates with variable interpolation |
-| `email_triggers` | Trigger rules for automated sending |
-| `email_queue` | Queued emails with delivery status |
-
-### Extensions & Integrations
-| Table | Purpose |
-|---|---|
-| `extensions` | Installed extensions with configuration |
-| `extension_hooks` | Event hook subscriptions |
-| `extension_logs` | Extension execution logs and errors |
-| `extension_configs` | Per-extension configuration storage |
-| `integrations` | Third-party integrations (Slack, Webhook, etc) |
-| `integration_syncs` | Integration sync history and status |
-| `integration_logs` | Integration execution logs |
-
-### Widgets & Reporting
-| Table | Purpose |
-|---|---|
-| `widgets` | Embeddable widgets with configuration |
-| `widget_access_tokens` | Per-widget API access tokens |
-| `widget_access_log` | Widget embed request audit trail |
+### Email & Extensions
+- `email_templates`, `email_queue`, `email_providers`, `email_triggers`
+- `extensions`, `extension_hooks`, `extension_logs`, `extension_config`
 
 ### System & Audit
-| Table | Purpose |
-|---|---|
-| `activity_log` | System-wide user and system action audit trail |
-| `organizations` | Multi-org support (if enabled) |
-| `custom_fields` | Custom field definitions per resource type |
-| `custom_field_values` | Custom field values per record |
-| `backup_restores` | Backup/restore operation tracking |
-| `tool_saved_queries` | Saved custom query builder queries |
-
-
-
-### Email System
-| Table | Purpose |
-|---|---|
-| `email_providers` | SMTP provider configuration (encrypted) |
-| `email_templates` | Email templates with variable slots |
-| `email_triggers` | Event-based email automation rules |
-| `email_queue` | Queued emails with retry and status tracking |
-
-### Extensions & Widgets
-| Table | Purpose |
-|---|---|
-| `extensions` | Installed extension manifests and status |
-| `extension_hooks` | Registered event hooks per extension |
-| `extension_config` | Extension configuration key-value store |
-| `extension_logs` | Extension execution and error logs |
-| `widgets` | Widget definitions and configuration |
-| `widget_logs` | Widget access logs (IP, user agent, response time) |
-| `integrations` | Legacy integration definitions |
-| `integration_syncs` | Integration sync tracking |
-| `integration_logs` | Integration activity logs |
-
-### System
-| Table | Purpose |
-|---|---|
-| `activities` | System-wide audit trail |
-| `saved_tools` | Saved custom query configurations |
+- `activity_log` - All user and system actions
+- `custom_field_definitions`, `custom_field_values` - Custom field storage
+- `saved_views` - Saved table filter/column configurations
+- `site_settings` - Global configuration
 
 ---
 
-## Pages & Routes
-
-### User-Facing Pages (24)
-
-| Route | Page | Description |
-|---|---|---|
-| `/` | Dashboard | Stats overview, charts, recent activity |
-| `/crew` | Crew List | Searchable crew directory with filters |
-| `/crew/[id]` | Crew Detail | Full profile, documents, assignments, sea time |
-| `/pipeline` | Application Pipeline | Kanban board for application processing |
-| `/ships` | Ship Registry | Fleet overview with vessel details |
-| `/ships/[id]` | Ship Detail | Vessel info, crew, maintenance, supplies |
-| `/voyages` | Voyage List | All voyages with status and filtering |
-| `/voyages/[id]` | Voyage Detail | Voyage info, crew assignments, positions |
-| `/positions` | Position Management | Define and manage crew positions |
-| `/tasks` | Task Management | Operational tasks with assignment and tracking |
-| `/incidents` | Safety Incidents | Incident reporting and resolution tracking |
-| `/availability` | Crew Availability | Availability calendar with timeline and heatmap views |
-| `/map` | Live Vessel Map | Real-time multi-source vessel tracking with weather overlays |
-| `/onboarding` | Onboarding | Checklist management and progress tracking |
-| `/email` | Email System | Templates, triggers, queue, and providers |
-| `/integrations` | Widget Builder | Create, manage, and template widgets |
-| `/extensions` | Extensions | Install, configure, and monitor extensions |
-| `/export` | Data Export | Export 18+ data sources in CSV/JSON |
-| `/tools` | Custom Tools | Visual SQL query builder |
-| `/upload` | Bulk Import | CSV upload for batch data import |
-| `/users` | User Management | Create and manage user accounts |
-| `/settings` | Settings | Global configuration and feature flags |
-| `/portal` | Crew Portal | Self-service crew dashboard |
-| `/how-to` | Documentation | Interactive feature guides and tutorials |
-| `/login` | Login | Authentication page |
-
-### API Endpoints (63)
-
-<details>
-<summary>Click to expand full API reference</summary>
-
-#### Authentication
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/auth/login` | Authenticate user, return JWT |
-| `POST` | `/api/auth/register` | Create new user account |
-| `POST` | `/api/auth/logout` | Clear auth session |
-| `GET` | `/api/auth/session` | Get current session info |
-| `GET` | `/api/auth/first-check` | Check if first-user setup is needed |
-
-#### Crew
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/crew` | List/create crew applications |
-| `GET/PUT/DELETE` | `/api/crew/[id]` | Get/update/delete crew member |
-| `GET/POST` | `/api/crew/[id]/checkins` | Crew check-in records |
-| `GET/POST` | `/api/crew/[id]/sea-time` | Sea time records |
-| `GET/POST/DELETE` | `/api/crew/[id]/tags` | Crew tags |
-
-#### Fleet
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/ships` | List/create ships |
-| `GET/PUT/DELETE` | `/api/ships/[id]` | Ship CRUD |
-| `GET/POST` | `/api/ships/[id]/crew` | Ship crew roster |
-| `GET/POST` | `/api/ships/[id]/maintenance` | Maintenance records |
-| `GET/POST` | `/api/ships/[id]/supplies` | Supply inventory |
-
-#### Voyages
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/voyages` | List/create voyages |
-| `GET/PUT/DELETE` | `/api/voyages/[id]` | Voyage CRUD |
-| `GET/POST` | `/api/voyages/[id]/positions` | Voyage positions |
-
-#### Operations
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/assignments` | Crew assignments |
-| `GET/PUT/DELETE` | `/api/assignments/[id]` | Assignment CRUD |
-| `GET/POST` | `/api/tasks` | Task management |
-| `GET/PUT/DELETE` | `/api/tasks/[id]` | Task CRUD |
-| `GET/POST` | `/api/incidents` | Incident reports |
-| `GET/PUT/DELETE` | `/api/incidents/[id]` | Incident CRUD |
-| `GET/POST` | `/api/positions` | Position definitions |
-| `GET/PUT/DELETE` | `/api/positions/[id]` | Position CRUD |
-| `GET` | `/api/positions/[id]/match` | Auto-match crew to position |
-
-#### Documents
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/documents` | Document management |
-| `GET/PUT/DELETE` | `/api/documents/[id]` | Document CRUD |
-| `POST` | `/api/documents/[id]/signature` | E-signature submission |
-
-#### Email
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/email/templates` | Email templates |
-| `GET/POST` | `/api/email/triggers` | Email triggers |
-| `GET` | `/api/email/queue` | Email queue status |
-| `POST` | `/api/email/send` | Send email |
-| `GET/POST` | `/api/email/providers` | SMTP providers |
-| `POST` | `/api/cron/email-queue` | Process email queue (cron) |
-
-#### Extensions
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/extensions` | List/install extensions |
-| `GET/PUT/DELETE` | `/api/extensions/[id]` | Extension CRUD + activate/deactivate |
-| `POST` | `/api/extensions/validate` | Validate JSON manifest |
-| `GET` | `/api/extensions/logs` | Extension logs |
-
-#### Widgets
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/widgets` | List/create widgets |
-| `POST` | `/api/widgets/preview` | Generate live widget preview |
-| `GET` | `/api/widgets/embed/[id]` | Serve embedded widget (public) |
-
-#### Live Map
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST/PUT/DELETE` | `/api/map/sources` | Vessel tracking source CRUD + activate/deactivate |
-| `GET` | `/api/map/positions` | Vessel positions from DB (internal fleet) |
-| `POST` | `/api/map/fetch` | Fetch from a source. External = live passthrough, Internal Fleet = DB persist |
-
-#### System
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/settings` | Global settings |
-| `GET` | `/api/settings/global-documents` | Required document types |
-| `GET` | `/api/stats` | Dashboard statistics |
-| `GET` | `/api/activities` | Activity audit log |
-| `GET` | `/api/availability` | Crew availability |
-| `GET/POST` | `/api/checklists` | Onboarding checklists |
-| `GET` | `/api/search/entities` | Global entity search |
-| `GET` | `/api/tags` | All crew tags |
-| `GET/POST` | `/api/kanban` | Kanban board state |
-| `POST` | `/api/kanban/move` | Move kanban card |
-| `POST` | `/api/upload` | File upload |
-| `GET/POST` | `/api/users` | User management |
-| `GET/PUT/DELETE` | `/api/tools/saved` | Saved custom queries |
-| `GET` | `/api/tools/schema` | Database schema for query builder |
-| `POST` | `/api/tools/query` | Execute custom query |
-| `GET` | `/api/export` | Data export (18+ sources) |
-| `GET/POST` | `/api/portal` | Crew portal data |
-| `PUT` | `/api/portal/profile` | Update crew profile |
-| `POST` | `/api/portal/sign` | Portal e-signature |
-
-</details>
-
----
-
-## Widget Builder
-
-The Widget Builder lets you create embeddable data widgets that display live data from your database on any external website.
-
-### 6-Step Creation Wizard
-
-1. **Select Data Source** -- Choose from 9 database tables (voyages, ships, crew, assignments, sea time, tasks, incidents, activities, check-ins)
-2. **Choose Columns** -- Select which columns to display. All column types supported (text, dates, numbers, badges, emails, booleans, JSON)
-3. **Filters & Sort** -- Add filters (equals, contains, greater than, etc.) and set sort column/direction
-4. **View Type** -- Choose Table, Cards, List, Stats, Timeline, or Minimal
-5. **Style & Preview** -- Pick a visual style preset with live iframe preview
-6. **Name & Publish** -- Name the widget, set rate limits, and publish
-
-### View Types
-
-| View | Best For |
-|---|---|
-| **Table** | Full data grids with horizontal scroll, alternating rows, right-aligned numbers |
-| **Cards** | Individual records with auto-detected title, subtitle, and all remaining fields |
-| **List** | Compact rows with title + inline meta tags + secondary detail row |
-| **Stats** | Aggregate dashboards: sums, averages, top values, date ranges, unique counts |
-| **Timeline** | Chronological events with connecting dots and labeled tags |
-| **Minimal** | Ultra-clean display with title + inline columns separated by dots |
-
-All views are **fully adaptive** -- they show every selected column regardless of count, without dropping or hiding data.
-
-### Style Presets
-
-| Preset | Description |
-|---|---|
-| **Modern** | Clean white with blue accents |
-| **Ocean** | Deep navy with cyan highlights (maritime themed) |
-| **Minimal** | High contrast black-on-white monochrome |
-| **Vibrant** | Warm orange accents on light stone |
-| **Corporate** | Soft purple tones |
-| **Seafoam** | Mint and teal for maritime themes |
-
-All CSS uses `!important` and scoped selectors for bulletproof isolation from host site stylesheets.
-
-### Pre-made Templates
-
-5 one-click-deploy templates are included:
-
-| Template | Data Source | View | Style |
-|---|---|---|---|
-| Fleet Overview | Ships | Cards | Ocean |
-| Active Voyages | Voyages | Timeline | Modern |
-| Crew Pipeline | Crew Applications | List | Seafoam |
-| Safety Dashboard | Incidents | Stats | Vibrant |
-| Operations Board | Tasks | Table | Corporate |
-
-### Embedding
-
-```html
-<!-- Script embed (recommended) -->
-<script src="https://your-app.vercel.app/api/widgets/embed/WIDGET_ID?token=ACCESS_TOKEN"></script>
-
-<!-- Iframe embed (full CSS isolation) -->
-<iframe src="https://your-app.vercel.app/api/widgets/embed/WIDGET_ID?token=ACCESS_TOKEN"
-  width="100%" height="400" frameborder="0"></iframe>
-```
-
----
-
-## Extensions System
-
-Extensions are plugin-like automations installed via JSON manifests. They hook into SeaRM events, run cron jobs, and require no code deployment.
-
-### Default Extensions
-
-| Extension | Category | Hooks | Description |
-|---|---|---|---|
-| **Slack Crew Notifier** | Communication | 4 event hooks | Posts crew events and voyages to Slack via webhook |
-| **Document Expiry Monitor** | Compliance | 2 hooks + 1 cron | Daily check for expiring documents with email alerts |
-| **Voyage Weather Briefing** | Operations | 2 event hooks | Fetches marine weather data for departing voyages |
-| **Crew Onboarding Automator** | Crew | 3 event hooks | Creates checklists, sends emails, assigns training on approval |
-| **Maintenance Scheduler** | Operations | 2 hooks + 2 crons | Weekly recurring maintenance + overdue escalation |
-
-### Extension Manifest Structure
-
-```json
-{
-  "slug": "my-extension",
-  "name": "My Extension",
-  "version": "1.0.0",
-  "author": "Your Name",
-  "category": "operations",
-  "permissions": ["register:hooks", "read:crew", "send:email"],
-  "hooks": [
-    {
-      "name": "crew.application.approved",
-      "type": "event",
-      "handler": "onApproved",
-      "priority": 10,
-      "description": "Triggered when application is approved"
-    }
-  ],
-  "config_schema": [
-    {
-      "key": "webhook_url",
-      "label": "Webhook URL",
-      "type": "url",
-      "required": true
-    }
-  ]
-}
-```
-
-### Extension Lifecycle
-
-```
-Install (inactive) --> Configure --> Activate (running) --> Deactivate --> Uninstall
-```
-
----
-
-## Data Export
-
-Export any data source in CSV or JSON format. Sources are organized by category:
-
-| Category | Sources |
-|---|---|
-| **Crew** | Applications (with 15 skill ratings), Assignments, Sea Time, Check-Ins, Tags, Onboarding |
-| **Fleet & Operations** | Ships, Voyages, Positions, Maintenance, Supplies |
-| **Tasks & Safety** | Tasks, Incidents, Activity Log |
-| **Documents & Email** | Documents, Email Templates, Email Queue |
-| **System** | Users (passwords excluded), Widgets |
-
-All exports include JOINed data (e.g., crew names on assignments, ship names on voyages).
-
----
-
-## Email System
-
-| Feature | Description |
-|---|---|
-| **Templates** | Create reusable email templates with `{{variable}}` interpolation |
-| **Triggers** | Configure automated emails on events (application received, status changed, etc.) |
-| **Queue** | Reliable delivery with retry logic, status tracking, and error logging |
-| **Providers** | Connect SMTP providers with encrypted credential storage |
-| **Cron Processing** | Automatic queue processing via `/api/cron/email-queue` |
-
----
-
-## Authentication & Roles
-
-SeaRM uses custom JWT authentication with bcrypt password hashing.
-
-| Role | Access Level |
-|---|---|
-| **Sysadmin** | Full system access: user management, settings, extensions, all data |
-| **Admin** | Crew management, fleet operations, document verification, reporting |
-| **Coordinator** | View crew data, manage deployments, limited write access |
-| **Crew** | Crew portal only: view profile, upload documents, sign e-signatures |
-
-- Passwords hashed with `bcryptjs` (cost factor 12)
-- Sessions managed via JWT tokens signed with `jose`
-- HTTP-only secure cookies for token storage
-- First-user detection for initial admin setup
-
----
-
-## Single Sign-On (SSO)
-
-SeaRM supports enterprise-grade Single Sign-On authentication with OAuth2 and SAML2 providers.
-
-### Supported Providers
-
-**OAuth2:**
-- Google
-- GitHub
-- Microsoft
-- Apple
-- Any OIDC-compatible provider
-
-**SAML2:**
-- Okta
-- Azure AD
-- OneLogin
-- Any SAML2-compatible IdP
-
-### Features
-
-- **BYO (Bring Your Own)** - Configure your own providers
-- **Account Linking** - Users can link/unlink SSO accounts to existing accounts
-- **Auto-Linking** - Optional automatic account linking by email domain
-- **Encrypted Storage** - All tokens encrypted at rest using AES-256
-- **Audit Trail** - Complete event logging for compliance (GDPR, SOC2)
-- **Multiple Providers** - Users can link multiple SSO providers
-- **Admin Dashboard** - Manage providers, view audit logs, test connections
-- **User Dashboard** - Users can manage their linked accounts
-
-### Quick Setup
-
-1. **Admin**: Settings → Authentication → SSO Providers
-2. **Add Provider**: OAuth2 or SAML2 (provide credentials from your IdP)
-3. **Activate**: Toggle "Active" to enable
-4. **Users**: Profile → Security → Linked Accounts → Link
-
-See [SSO_GUIDE.md](docs/SSO_GUIDE.md) for complete configuration instructions.
-
----
+## Deployment
 
 ### Vercel (Recommended)
 
+1. Push code to GitHub
+2. Connect repository to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Add environment variables
+4. Deploy (automatic on git push)
+
 ```bash
-# Push to GitHub
+git add .
+git commit -m "Deploy SeaRM"
 git push origin main
-
-# Import to Vercel
-# 1. Visit vercel.com/new
-# 2. Import your GitHub repository
-# 3. Add environment variables (DATABASE_URL, AUTH_SECRET, NEXT_PUBLIC_APP_URL)
-# 4. Deploy
 ```
-
-Vercel automatically deploys on every push to `main`.
 
 ### Docker
 
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm build
-EXPOSE 3000
-CMD ["pnpm", "start"]
-```
-
 ```bash
 docker build -t searm .
-docker run -p 3000:3000 \
-  -e DATABASE_URL="postgresql://..." \
-  -e AUTH_SECRET="your-secret" \
-  -e NEXT_PUBLIC_APP_URL="http://localhost:3000" \
-  searm
+docker run -e DATABASE_URL="..." -e AUTH_SECRET="..." -p 3000:3000 searm
 ```
 
-### PM2 (Self-Hosted)
+### Self-Hosted (Linux/Ubuntu)
 
-```bash
-pnpm build
-pm2 start npm --name "searm" -- start
-pm2 save && pm2 startup
-```
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete guide.
 
 ---
 
-## Configuration
+## Database Optimization
 
-### Site Settings
+The system has been fully optimized:
 
-Accessible from the **Settings** page:
-
-- **Required Documents** -- Define document types all crew must upload
-- **Required E-Signature Documents** -- Specify documents requiring electronic signatures
-- **Feature Flags** -- Enable/disable pages and features
-- **Email Templates** -- Customize notification emails
-
-### Customization
-
-| What | Where |
-|---|---|
-| Application form fields | `APPLICATION_FIELDS` in `/lib/db.ts` |
-| Pipeline stages | `PIPELINE_STAGES` in `/lib/db.ts` |
-| Onboarding checklists | `/api/checklists` API |
-| Widget data sources | `/lib/widgets/data-sources.ts` |
-| Extension manifests | `/api/extensions` API |
+✅ Removed unused 632 KB GIN index on `application_data`  
+✅ Reindexed `file_storage` table (saved 3.4 MB)  
+✅ `VACUUM ANALYZE` on all active tables (reclaimed dead rows)  
+✅ Dynamic kanban pagination (50 items per column max)  
+✅ Parameterized queries throughout (SQL injection prevention)  
+✅ Auth consolidation (single DB connection pool)  
+✅ API authorization middleware (staff-only protection)
 
 ---
 
-## Troubleshooting
+## Recent Improvements
 
-<details>
-<summary><strong>Cannot connect to database</strong></summary>
+### Audit Fixes (Latest Release)
 
-- Verify `DATABASE_URL` in `.env.local` includes `?sslmode=require`
-- Test connection: `psql $DATABASE_URL`
-- For Neon: ensure your IP is not blocked
-</details>
+**Critical Bugs Fixed:**
+- Extension manager now properly initializes `getDb()` before use
+- Portal tips updated to reference correct crew statuses
+- Import system fully implemented (was a stub returning 0 rows)
 
-<details>
-<summary><strong>Login loops or session issues</strong></summary>
+**Security Enhancements:**
+- API authorization middleware applied to sensitive endpoints
+- Sort parameter validation (prevents SQL injection)
+- Consolidated duplicate DB connections
+- Removed dead permission system (now RBAC-only)
 
-- Clear all site cookies and retry
-- Ensure `AUTH_SECRET` is set (min 32 characters)
-- Verify `users` table exists: `SELECT count(*) FROM users`
-</details>
+**UI Improvements:**
+- Kanban grid now supports all 10 crew statuses (dynamic columns)
+- Crew profile shows assigned and preferred positions
+- Custom fields tab integrated into crew detail page
+- CSV import now supports pronouns mapping
+- Availability filter fixed to check end dates
 
-<details>
-<summary><strong>Widget preview shows error</strong></summary>
-
-- Ensure the selected data source table exists and has data
-- Check browser console for API errors
-- Verify the widget columns match actual database columns
-</details>
-
-<details>
-<summary><strong>Extension install fails</strong></summary>
-
-- Validate the manifest JSON using the Developer Guide tab
-- Ensure the slug is unique (not already installed)
-- Check required fields: slug, name, version, hooks, permissions
-</details>
-
-<details>
-<summary><strong>Data export returns empty</strong></summary>
-
-- Verify the source table has data
-- Check browser network tab for API errors
-- Some tables (email_queue, extension_logs) may be empty by default
-</details>
-
-<details>
-<summary><strong>Performance optimization</strong></summary>
-
-- Enable connection pooling on Neon
-- Run `ANALYZE` on production database
-- Use Custom Tools to identify slow queries
-- Consider upgrading Neon tier for higher connection limits
-</details>
+**Performance:**
+- Kanban API limits 50 items per column (scalable pagination)
+- Import execution properly handles row-level errors
+- Per-column overflow indicators
 
 ---
 
 ## Contributing
 
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting PRs.
+
 ```bash
-# Fork and clone
-git clone https://github.com/your-username/searm.git
-cd searm && pnpm install
-
-# Create feature branch
+# Development workflow
 git checkout -b feature/your-feature
-
-# Make changes, lint, and commit
-pnpm lint
-git commit -m "feat: add your feature"
-
-# Push and open PR
+# Make changes
+pnpm run lint
+pnpm run build
+git commit -m "Add your feature"
 git push origin feature/your-feature
+# Create Pull Request
 ```
-
-### Code Style
-
-- TypeScript for all code
-- Functional components with hooks
-- `pnpm lint` must pass before merge
-- Follow existing patterns in `/lib` and `/app/api`
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License - See [LICENSE](LICENSE) file for details
 
 ---
 
-## Acknowledgments
+## Support
 
-Built with [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [Neon PostgreSQL](https://neon.tech/), [Recharts](https://recharts.org/), and [Vercel](https://vercel.com/).
+- 📖 [Full Documentation](README.md)
+- 🐛 [Report Bugs](https://github.com/your-org/searm/issues)
+- 💬 [Discussions](https://github.com/your-org/searm/discussions)
+- 📧 Email: support@searm.dev
 
 ---
 
-<p align="center"><strong>Built for maritime operations.</strong></p>
+<p align="center">
+  <strong>Made with ⚓ for maritime operations</strong>
+</p>

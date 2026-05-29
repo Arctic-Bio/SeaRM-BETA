@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { useAuth } from '@/components/auth-provider'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,7 +33,6 @@ const PROVIDER_INFO: Record<string, { label: string; placeholder: string; docs: 
 
 export default function BackupPage() {
   const { user } = useAuth()
-  const { toast } = useToast()
   const [newConnLabel, setNewConnLabel] = useState('')
   const [newConnProvider, setNewConnProvider] = useState('neon')
   const [newConnString, setNewConnString] = useState('')

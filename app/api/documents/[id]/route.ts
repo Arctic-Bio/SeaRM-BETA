@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const sql = getDb()
     const { id } = await params
     const inline = req.nextUrl.searchParams.get("inline") === "true"
     const rows = await sql`SELECT file_data, file_name, mime_type, global_source_id FROM file_storage WHERE id = ${id}`
@@ -40,6 +40,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const sql = getDb()
     const { id } = await params
     const body = await req.json()
     const updates: string[] = []
@@ -61,6 +62,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const sql = getDb()
     const { id } = await params
     await sql`DELETE FROM file_storage WHERE id = ${id}`
     return NextResponse.json({ success: true })

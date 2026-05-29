@@ -44,7 +44,7 @@ export async function PATCH(
     const updated = await sql`
       SELECT t.*, c.first_name || ' ' || c.last_name as crew_name, v.voyage_name
       FROM tasks t
-      LEFT JOIN crew_applications c ON t.crew_id = c.id
+      LEFT JOIN crew c ON t.crew_id = c.id
       LEFT JOIN voyages v ON t.voyage_id = v.id
       WHERE t.id = ${id}
     `

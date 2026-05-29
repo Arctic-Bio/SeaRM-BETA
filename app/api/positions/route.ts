@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       FROM crew_positions cp
       LEFT JOIN voyages v ON v.id = cp.voyage_id
       LEFT JOIN ships s ON s.id = v.ship_id
-      LEFT JOIN crew_applications ac ON ac.id = cp.assigned_crew_id
+      LEFT JOIN crew ac ON ac.id = cp.assigned_crew_id
       LEFT JOIN crew_pay_config pc ON pc.id = cp.pay_config_id
       ${where}
       ORDER BY

@@ -4,13 +4,12 @@
 // Usage: import { fireEmailEvent } from "@/lib/email/events"; fireEmailEvent("crew_application_received", { crew_name: "John", ... })
 // ============================================================================
 
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { renderTemplate } from "./template-engine"
 import { sendMail } from "./transport"
 import { decrypt } from "./encryption"
 import type { SystemEvent, EmailProvider, TriggerConditions } from "./types"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 /**
  * Fire a system event, find all active triggers, render templates, and queue/send emails.
@@ -25,6 +24,7 @@ export async function fireEmailEvent(
   eventData: Record<string, any>,
   recipientOverride?: { email: string; name?: string }
 ): Promise<{ queued: number; sent: number; errors: string[] }> {
+  const sql = getDb()
   const result = { queued: 0, sent: 0, errors: [] as string[] }
 
   try {
@@ -180,6 +180,7 @@ function evaluateConditions(conditions: TriggerConditions, data: Record<string, 
 }
 
 async function getProvider(providerId: string | null): Promise<EmailProvider | null> {
+  const sql = getDb()
   let rows
   if (providerId) {
     rows = await sql`SELECT * FROM email_providers WHERE id = ${providerId} AND is_active = true`
@@ -200,6 +201,7 @@ async function queueEmail(
   variables: Record<string, any>, eventType: string,
   providerId: string | null, scheduledFor?: string
 ) {
+  const sql = getDb()
   await sql`
     INSERT INTO email_queue (
       trigger_id, template_id, provider_id, recipient_email, recipient_name,

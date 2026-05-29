@@ -3,10 +3,8 @@
 // Core manager for installing, activating, deactivating, configuring,
 // and uninstalling extensions. All DB operations live here.
 
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import type { ExtensionManifest, ExtensionRow, ExtensionLogEntry } from "./types"
-
-const sql = neon(process.env.DATABASE_URL!)
 
 // ---- Logging ----
 
@@ -25,20 +23,24 @@ export async function logExtensionAction(
 // ---- CRUD ----
 
 export async function listExtensions(): Promise<ExtensionRow[]> {
+  const sql = getDb()
   return await sql`SELECT * FROM extensions ORDER BY name ASC` as ExtensionRow[]
 }
 
 export async function getExtension(id: string): Promise<ExtensionRow | null> {
+  const sql = getDb()
   const rows = await sql`SELECT * FROM extensions WHERE id = ${id}`
   return (rows[0] as ExtensionRow) || null
 }
 
 export async function getExtensionBySlug(slug: string): Promise<ExtensionRow | null> {
+  const sql = getDb()
   const rows = await sql`SELECT * FROM extensions WHERE slug = ${slug}`
   return (rows[0] as ExtensionRow) || null
 }
 
 export async function installExtension(manifest: ExtensionManifest, installedBy?: string): Promise<ExtensionRow> {
+  const sql = getDb()
   // Check for duplicate slug
   const existing = await getExtensionBySlug(manifest.slug)
   if (existing) throw new Error(`Extension with slug '${manifest.slug}' is already installed`)
@@ -95,6 +97,7 @@ export async function installExtension(manifest: ExtensionManifest, installedBy?
 }
 
 export async function activateExtension(id: string, performedBy?: string): Promise<ExtensionRow> {
+  const sql = getDb()
   const ext = await getExtension(id)
   if (!ext) throw new Error("Extension not found")
   if (ext.status === "active") throw new Error("Extension is already active")
@@ -113,6 +116,7 @@ export async function activateExtension(id: string, performedBy?: string): Promi
 }
 
 export async function deactivateExtension(id: string, performedBy?: string): Promise<ExtensionRow> {
+  const sql = getDb()
   const ext = await getExtension(id)
   if (!ext) throw new Error("Extension not found")
 
@@ -130,6 +134,7 @@ export async function deactivateExtension(id: string, performedBy?: string): Pro
 }
 
 export async function uninstallExtension(id: string, performedBy?: string): Promise<void> {
+  const sql = getDb()
   const ext = await getExtension(id)
   if (!ext) throw new Error("Extension not found")
 
@@ -153,6 +158,7 @@ export async function uninstallExtension(id: string, performedBy?: string): Prom
 // ---- Configuration ----
 
 export async function getExtensionConfig(extensionId: string): Promise<Record<string, any>> {
+  const sql = getDb()
   const rows = await sql`SELECT config_key, config_value, is_secret FROM extension_config WHERE extension_id = ${extensionId}`
   const config: Record<string, any> = {}
   for (const row of rows) {
@@ -162,6 +168,7 @@ export async function getExtensionConfig(extensionId: string): Promise<Record<st
 }
 
 export async function getExtensionConfigRaw(extensionId: string): Promise<Record<string, any>> {
+  const sql = getDb()
   const rows = await sql`SELECT config_key, config_value FROM extension_config WHERE extension_id = ${extensionId}`
   const config: Record<string, any> = {}
   for (const row of rows) config[row.config_key] = row.config_value
@@ -169,6 +176,7 @@ export async function getExtensionConfigRaw(extensionId: string): Promise<Record
 }
 
 export async function setExtensionConfig(extensionId: string, key: string, value: any, updatedBy?: string): Promise<void> {
+  const sql = getDb()
   // Validate against config schema
   const ext = await getExtension(extensionId)
   if (!ext) throw new Error("Extension not found")
@@ -192,6 +200,7 @@ export async function setExtensionConfigBulk(extensionId: string, config: Record
 // ---- Hooks ----
 
 export async function getActiveHooksForEvent(eventName: string): Promise<any[]> {
+  const sql = getDb()
   return await sql`
     SELECT h.*, e.slug as extension_slug, e.name as extension_name
     FROM extension_hooks h
@@ -209,6 +218,7 @@ export async function getExtensionLogs(filters: {
   limit?: number
   offset?: number
 }): Promise<{ logs: ExtensionLogEntry[]; total: number }> {
+  const sql = getDb()
   const limit = filters.limit || 50
   const offset = filters.offset || 0
 
@@ -239,10 +249,12 @@ export async function getExtensionLogs(filters: {
 // ---- Record errors ----
 
 export async function recordExtensionError(id: string, error: string): Promise<void> {
+  const sql = getDb()
   await sql`UPDATE extensions SET error_count = error_count + 1, last_error = ${error}, last_error_at = NOW(), updated_at = NOW() WHERE id = ${id}`
   await logExtensionAction(id, "error", "runtime_error", error, {})
 }
 
 export async function clearExtensionErrors(id: string): Promise<void> {
+  const sql = getDb()
   await sql`UPDATE extensions SET error_count = 0, last_error = NULL, last_error_at = NULL, updated_at = NOW() WHERE id = ${id}`
 }

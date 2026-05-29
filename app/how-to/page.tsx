@@ -6,14 +6,12 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { DataFlowGraph } from "@/components/data-flow-graph"
 import {
   LayoutDashboard, Users, Ship, Map, CheckSquare, Upload, Kanban,
   Settings, Shield, Download, ClipboardList, AlertTriangle, Calendar,
   Briefcase, Search, ChevronDown, ChevronRight, Anchor, BookOpen,
-  Wrench, UserPlus, FileText, PenLine, Star, Navigation, Database,
-  HelpCircle, Lightbulb, Zap, ArrowRight, LayoutGrid, Puzzle, CloudSun,
-  Network,
+  Wrench, UserPlus, FileText, PenLine, Star, Database,
+  HelpCircle, Lightbulb, Zap, ArrowRight, Puzzle,
 } from "lucide-react"
 
 // --- Guide Data ---
@@ -89,34 +87,34 @@ const GUIDE_SECTIONS: GuideSection[] = [
     id: "crew-management",
     title: "Crew Management",
     icon: Users,
-    description: "Managing crew applications, profiles, and onboarding",
+    description: "Managing crew members, profiles, and onboarding",
     items: [
       {
-        title: "Uploading Crew Applications (CSV)",
-        content: "The primary way to import crew applications is via CSV upload. The system maps CSV columns to database fields automatically based on predefined column mappings.",
+        title: "Uploading Crew Data (CSV)",
+        content: "The primary way to import crew members is via CSV upload. The system maps CSV columns to database fields automatically based on predefined column mappings.",
         steps: [
           "Navigate to Upload CSV from the sidebar",
           "Drag and drop your CSV file or click to browse",
           "The system previews detected columns and shows the mapping",
           "Click 'Import' to process -- duplicates are detected by email address",
-          "New applications appear with 'new_applicant' status in the Crew Applications list",
+          "New crew members appear with 'Application' status in the Crew list",
         ],
         tip: "The CSV column mapping supports all standard fields including skills (rated as Basic/Experienced/Professional), languages, maritime qualifications, and personal details.",
       },
       {
-        title: "Crew Application Profiles",
-        content: "Each crew application has a detailed profile page accessible by clicking on a crew member from the Applications list. The profile includes personal info, skills radar, documents, assignments, and activity history.",
+        title: "Crew Member Profiles",
+        content: "Each crew member has a detailed profile page accessible by clicking on a crew member from the Crew list. The profile includes personal info, skills radar, documents, assignments, and activity history.",
         steps: [
-          "Click on any crew member row in the Applications list to open their profile",
-          "Use the status dropdown to advance them through the pipeline (new > reviewed > interview > approved > confirmed)",
-          "Rate applicants with 1-5 stars for quick filtering",
+          "Click on any crew member row in the Crew list to open their profile",
+          "Use the status dropdown to advance them through the pipeline (application > screening > interview > verified > volunteer > active)",
+          "Rate crew members with 1-5 stars for quick filtering",
           "Add notes, tags, and internal comments",
           "Upload and manage documents, schedule tasks, and track onboarding",
         ],
       },
       {
         title: "Tags & Filtering",
-        content: "Tags allow you to categorize crew members with custom labels. The Applications list supports advanced filtering by status, country, skills, rating, and tags.",
+        content: "Tags allow you to categorize crew members with custom labels. The Crew list supports advanced filtering by status, country, skills, rating, and tags.",
         steps: [
           "Add tags from a crew profile page using the tag input field",
           "Filter by tags in the main Applications list using the tag filter",
@@ -235,46 +233,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
           "Click on crew members to jump to their profile",
         ],
       },
-      {
-        title: "Live Vessel Map",
-        content: "The Live Map page provides a full-screen, real-time vessel tracking dashboard built on Leaflet. It aggregates vessel positions from multiple data sources including AISHub, MarineTraffic, VesselFinder, AIS Stream (WebSocket), custom REST APIs, and your internal SeaRM fleet. External source data is displayed live without saving to your database -- only your internal fleet positions are persisted.",
-        steps: [
-          "Navigate to Fleet & Campaigns > Live Map in the sidebar",
-          "Open the Sources tab in the left panel and click Add to configure a data source",
-          "Choose a source type (AISHub, MarineTraffic, VesselFinder, AIS Stream, Custom API, or Internal Fleet)",
-          "Enter the required API credentials and connection details for your chosen source",
-          "Activate the source and click Load/Fetch to pull vessel positions",
-          "External sources load data live (shown with 'LIVE' badge) -- only Internal Fleet saves to the database",
-          "Multiple source fetches merge together -- load from several sources to build a complete picture",
-          "Use the Vessels tab to search by name, MMSI, IMO, callsign, flag, or destination across all loaded vessels",
-          "Filter by ship type (Cargo, Tanker, Passenger, etc.) and click any vessel to fly to it on the map",
-          "Use the Layers tab to switch between Dark Ocean, Satellite, Nautical, and Light base maps",
-          "Toggle vessel trails and labels for enhanced situational awareness",
-          "Auto-refresh runs every 30 seconds (can be paused from the top status bar)",
-          "Click any vessel marker on the map to see full details in a popup and detail card",
-          "The map uses viewport-based rendering -- only vessels within your current view are rendered (up to 800) for performance",
-          "The status bar shows total vessels, fleet count, live count, and a 'clear' button to dismiss live data",
-        ],
-        tip: "External source data never touches your database. This keeps your DB clean and performant while still letting you see thousands of global vessels on the map.",
-      },
-      {
-        title: "Weather Overlays",
-        content: "The Weather tab in the map panel lets you add real-time weather tile layers on top of the map. Multiple free and API-key-based weather providers are supported, plus a custom tile URL option for bring-your-own sources.",
-        steps: [
-          "Open the Weather tab in the left panel and click 'Add Weather Source'",
-          "Choose from available providers: RainViewer (free radar), OpenWeatherMap (requires free API key), Ocean Depth/GEBCO (free bathymetry), NOAA/Iowa State (free US NEXRAD radar), or Custom Tile URL",
-          "Providers marked 'Free' work immediately with no setup -- the first layer auto-enables on add",
-          "For OpenWeatherMap, sign up at openweathermap.org for a free API key, then enter it in the API Key field",
-          "Toggle individual layers on/off with the switches (e.g. enable Precipitation Radar but disable Cloud Cover)",
-          "Use the global opacity slider at the top to adjust weather overlay transparency (10%-100%)",
-          "Weather tiles render on top of the base map but behind vessel markers so ships remain visible",
-          "RainViewer radar data refreshes automatically every 5 minutes to show latest precipitation",
-          "Custom Tile URL: enter any XYZ tile URL with {z}/{x}/{y} placeholders and optional {apikey} for your own sources",
-          "Remove any provider by clicking the trash icon -- its layers are immediately removed from the map",
-        ],
-        tip: "RainViewer and NOAA NEXRAD are both free with no API key. Ocean Depth (GEBCO/NCEI) shows bathymetric seafloor topography which is useful for route planning near shallow waters.",
-        related: ["Live Vessel Map"],
-      },
+
     ],
   },
   {
@@ -285,10 +244,10 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       {
         title: "Pipeline View",
-        content: "The Pipeline page shows crew applications as a visual Kanban board with drag-and-drop columns for each status stage.",
+        content: "The Pipeline page shows crew members as a visual Kanban board with drag-and-drop columns for each status stage.",
         steps: [
-          "View all applications organized by status in columns",
-          "Each card shows the applicant name, rating, country, and key skills",
+          "View all crew members organized by status in columns",
+          "Each card shows the crew member name, rating, country, and key skills",
           "Click cards to open the full crew profile",
           "Use filters to focus on specific departments or skill sets",
         ],
@@ -388,89 +347,8 @@ const GUIDE_SECTIONS: GuideSection[] = [
       },
       {
         title: "Available Export Sources",
-        content: "The following data can be exported: Crew Applications (with all 15 skill ratings), Crew Assignments, Sea Time Records, Crew Check-Ins, Crew Tags, Onboarding Checklists, Ships/Fleet, Voyages, Crew Positions, Ship Maintenance, Ship Supplies, Tasks, Incidents, Activity Log, Documents, Email Templates, Email Queue, Users & Roles, and Widgets.",
+        content: "The following data can be exported: Crew Members (with all 15 skill ratings), Crew Assignments, Sea Time Records, Crew Check-Ins, Crew Tags, Onboarding Checklists, Ships/Fleet, Voyages, Crew Positions, Ship Maintenance, Ship Supplies, Tasks, Incidents, Activity Log, Documents, Email Templates, Email Queue, Users & Roles, and Widgets.",
         tip: "User exports exclude passwords for security. Widget exports include configuration but not access tokens.",
-      },
-    ],
-  },
-  {
-    id: "widget-builder",
-    title: "Widget Builder",
-    icon: LayoutGrid,
-    description: "Create embeddable data widgets for external websites",
-    items: [
-      {
-        title: "Widget Builder Overview",
-        content: "The Widget Builder (accessible via sidebar) replaces the old integrations system. It lets you create secure, embeddable widgets that pull live data from your database and display it on any external website. Each widget has its own access token, rate limiting, and domain whitelisting for security.",
-        steps: [
-          "Navigate to Widget Builder from the sidebar (under the old 'Integrations' label)",
-          "The 'My Widgets' tab shows all created widgets with status, views, and quick actions",
-          "The 'Create Widget' tab launches a 6-step wizard to build a new widget",
-          "Each widget generates embed code (script tag or iframe) for copying into external sites",
-        ],
-      },
-      {
-        title: "Creating a Widget (6-Step Wizard)",
-        content: "The widget creation wizard guides you through selecting a data source, choosing columns, adding filters, picking a view type, applying a style preset, and publishing.",
-        steps: [
-          "Step 1 -- Select Data Source: Choose from 9 database tables (voyages, ships, crew applications, assignments, sea time, tasks, incidents, activities, crew check-ins)",
-          "Step 2 -- Choose Columns: Select which columns to display. All column types are supported (text, dates, numbers, badges, emails, booleans, JSON)",
-          "Step 3 -- Filters & Sort: Add filters (equals, contains, greater than, etc.) and set sort column/direction plus max row count",
-          "Step 4 -- View Type: Choose how data is displayed -- Table, Cards, List, Stats, Timeline, or Minimal",
-          "Step 5 -- Style & Preview: Pick a visual style preset and see a live preview that updates instantly when you change any setting",
-          "Step 6 -- Name & Publish: Give the widget a name, optional description, set rate limits, and publish. The system generates a unique access token and embed code.",
-        ],
-        tip: "The live preview in steps 5-6 renders inside an isolated iframe so styles are never overridden by the host page CSS.",
-      },
-      {
-        title: "View Types",
-        content: "Six view types are available, each adapting dynamically to show ALL selected columns regardless of how many you choose. No data is ever dropped or hidden.",
-        steps: [
-          "Table: Full data grid with horizontal scroll for many columns, alternating row colors, right-aligned numbers",
-          "Cards: Each row becomes a card with auto-detected title, subtitle, and all remaining columns as labeled key-value fields",
-          "List: Compact rows with title + inline meta tags. All additional columns are shown in a secondary detail row",
-          "Stats: Aggregates data into stat cards -- sums/averages for numbers, top values for text/badges, date ranges for dates, unique counts for all types",
-          "Timeline: Orders by the best date column with connecting dots. Title + all other columns shown as labeled tags",
-          "Minimal: Ultra-clean format with title + all remaining columns displayed inline with dot separators",
-        ],
-      },
-      {
-        title: "Style Presets",
-        content: "Six professionally designed style presets are available. Each generates fully self-contained CSS that works on any website without conflicts.",
-        steps: [
-          "Modern: Clean white background with blue accents -- versatile for any site",
-          "Ocean: Deep navy background with cyan highlights -- maritime themed",
-          "Minimal: High contrast black-on-white monochrome -- ultra-clean",
-          "Vibrant: Warm orange accents on light stone background -- eye-catching",
-          "Corporate: Soft purple tones -- professional and elegant",
-          "Seafoam: Mint and teal -- perfect for maritime and environmental themes",
-        ],
-        tip: "Widget CSS uses !important on all properties and scoped selectors to prevent host site stylesheets from overriding the widget appearance.",
-      },
-      {
-        title: "Embedding Widgets",
-        content: "Each published widget provides ready-to-copy embed code in two formats: a JavaScript script tag (recommended) or an iframe. The embed code can be pasted into any HTML page.",
-        steps: [
-          "From 'My Widgets', click 'Copy Embed Code' for the script tag version",
-          "Or click 'Copy Iframe Code' for a simple iframe embed",
-          "Paste the code into your external website's HTML where you want the widget to appear",
-          "The widget loads data live from your API, so it always shows current data",
-          "Widgets respect rate limits, domain whitelisting, and require the access token to function",
-        ],
-        tip: "Script embeds render directly into your page DOM. Iframe embeds provide complete CSS isolation and are recommended when host site styles might conflict.",
-        related: ["Data Export"],
-      },
-      {
-        title: "Widget Security & Management",
-        content: "Widgets are secured with unique 64-character access tokens, per-widget rate limiting, domain whitelisting, and full audit logging. All data access is read-only.",
-        steps: [
-          "Each widget gets a unique access token generated on creation -- never shared across widgets",
-          "Set rate limits (requests per minute) to prevent abuse -- default is 60 req/min",
-          "Optionally restrict to specific domains via the allowed_domains field",
-          "Toggle widgets on/off with the enable/disable switch from My Widgets",
-          "Delete widgets permanently when no longer needed",
-          "All widget access is logged in widget_logs with IP, user agent, referer, response time, and row count",
-        ],
       },
     ],
   },
@@ -496,10 +374,10 @@ const GUIDE_SECTIONS: GuideSection[] = [
         title: "Default Extensions",
         content: "Five production-ready extensions are available out of the box. Each can be installed with one click, then configured and activated from the Installed tab.",
         steps: [
-          "Slack Crew Notifier: Posts crew application events and voyage departures to a Slack channel via webhook. Configure the webhook URL and choose which events trigger notifications.",
+          "Slack Crew Notifier: Posts crew status change events and voyage departures to a Slack channel via webhook. Configure the webhook URL and choose which events trigger notifications.",
           "Document Expiry Monitor: Runs a daily cron job at 7 AM to check for crew documents nearing expiration. Sends warning emails at configurable thresholds (default: 30 days warning, 7 days critical).",
-          "Voyage Weather Briefing: Fetches marine weather data from a configurable API when a voyage status changes to departing. Auto-attaches weather briefings to voyage notes.",
-          "Crew Onboarding Automator: Triggers when an application is approved -- creates onboarding checklists, sends welcome emails, and assigns default training tasks when crew is put on a voyage.",
+
+          "Crew Onboarding Automator: Triggers when a crew member is approved -- creates onboarding checklists, sends welcome emails, and assigns default training tasks when crew is put on a voyage.",
           "Maintenance Scheduler: Generates recurring maintenance tasks on a weekly cron schedule, tracks completion, schedules follow-up inspections, and escalates overdue maintenance via email.",
         ],
       },
@@ -522,14 +400,14 @@ const GUIDE_SECTIONS: GuideSection[] = [
         title: "Extension Capabilities",
         content: "Extensions can declare hooks (event listeners that fire on specific SeaRM events), cron jobs (scheduled tasks), permissions (what data the extension can access), and configuration schemas (admin-editable settings).",
         steps: [
-          "Hooks: Listen to events like crew.application.received, voyage.departed, document.uploaded, maintenance.completed, etc.",
+          "Hooks: Listen to events like crew.status.changed, voyage.departed, document.uploaded, maintenance.completed, etc.",
           "Cron Jobs: Run scheduled tasks (e.g., daily compliance checks, weekly maintenance generation)",
           "Permissions: Control what the extension can access (read:crew, write:tasks, send:email, access:api, etc.)",
           "Config Schema: Define admin-editable fields with types (string, number, boolean, url, password, select, textarea)",
           "Dependencies: Extensions can depend on other extensions being installed and active",
         ],
         tip: "Check the Developer Guide tab in the Extensions page for the full manifest schema, hook events list, and example extensions.",
-        related: ["Widget Builder"],
+
       },
     ],
   },
@@ -667,23 +545,7 @@ export default function HowToPage() {
                 </button>
               )
             })}
-            {isAdmin && (
-              <>
-                <div className="my-2 border-t" />
-                <button
-                  onClick={() => { setActiveSection("data-flow"); setSearchQuery("") }}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all text-left",
-                    activeSection === "data-flow"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  <Network className={cn("h-3.5 w-3.5 shrink-0", activeSection === "data-flow" && "text-primary")} />
-                  <span className="truncate">Data Flow Graph</span>
-                </button>
-              </>
-            )}
+
           </div>
         </div>
 
@@ -730,12 +592,7 @@ export default function HowToPage() {
             )}
 
             {/* Section content mode */}
-            {(!searchQuery.trim() || searchQuery.trim().length <= 1) && activeSection === "data-flow" && isAdmin && (
-              <DataFlowGraph />
-            )}
-
-            {/* Section content mode */}
-            {(!searchQuery.trim() || searchQuery.trim().length <= 1) && activeGuide && activeSection !== "data-flow" && (
+            {(!searchQuery.trim() || searchQuery.trim().length <= 1) && activeGuide && (
               <div className="flex flex-col gap-6">
                 {/* Section header */}
                 <div className="flex items-start gap-4">

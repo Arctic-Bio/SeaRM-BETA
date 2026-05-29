@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { renderTemplate } from "@/lib/email/template-engine"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET: List all templates
 export async function GET() {
   try {
+    const sql = getDb()
     const rows = await sql`SELECT * FROM email_templates ORDER BY category, name`
     return NextResponse.json(rows)
   } catch (err: any) {
@@ -17,6 +17,7 @@ export async function GET() {
 // POST: Create, update, duplicate, or preview a template
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     const { action } = body
 
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
 // DELETE: Remove a template
 export async function DELETE(req: NextRequest) {
   try {
+    const sql = getDb()
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
     await sql`DELETE FROM email_templates WHERE id = ${id}`

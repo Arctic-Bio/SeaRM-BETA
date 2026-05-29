@@ -19,12 +19,13 @@ const EXPORT_CATEGORIES = [
   {
     label: "Crew",
     items: [
-      { key: "crew", label: "Crew Applications", icon: Users, description: "All applicant data including skills, qualifications, ratings, and contact info" },
+      { key: "crew", label: "Crew Members", icon: Users, description: "All crew member data including skills, qualifications, ratings, and contact info" },
       { key: "assignments", label: "Crew Assignments", icon: Anchor, description: "Crew-to-voyage assignments with roles, departments, reviews, and sea days" },
       { key: "sea_time", label: "Sea Time Records", icon: Clock, description: "Embarkation/disembarkation logs with days at sea per crew member" },
       { key: "crew_checkins", label: "Crew Check-Ins", icon: MapPin, description: "Check-in records with location, type, and recording details" },
       { key: "crew_tags", label: "Crew Tags", icon: Tags, description: "All tags and labels applied to crew members" },
       { key: "onboarding", label: "Onboarding Checklists", icon: ClipboardList, description: "Onboarding progress tracking by template, crew, and voyage" },
+      { key: "hourly_logs", label: "Hourly Logs", icon: Clock, description: "Crew hourly work logs with dates, hours, and categories" },
     ],
   },
   {
@@ -54,10 +55,22 @@ const EXPORT_CATEGORIES = [
     ],
   },
   {
+    label: "Finance",
+    items: [
+      { key: "invoices", label: "Invoices", icon: FileText, description: "All crew invoices with amounts, status, and payment dates" },
+      { key: "invoice_items", label: "Invoice Line Items", icon: FileText, description: "Individual line items for all invoices with quantities and prices" },
+    ],
+  },
+  {
     label: "System",
     items: [
       { key: "users", label: "Users & Roles", icon: UserCog, description: "User accounts with names, emails, and roles (passwords excluded)" },
+      { key: "roles_permissions", label: "Roles & Permissions", icon: UserCog, description: "Role definitions and permission grants" },
       { key: "widgets", label: "Widgets", icon: LayoutGrid, description: "Embeddable widget configurations with data sources and style settings" },
+      { key: "saved_views", label: "Saved Views", icon: FileSpreadsheet, description: "Saved table filter and column configurations" },
+      { key: "countries", label: "Countries", icon: Navigation, description: "Country reference data with codes and regions" },
+      { key: "site_settings", label: "Site Settings", icon: UserCog, description: "Global site configuration key-value pairs" },
+      { key: "file_storage", label: "File Storage", icon: FolderDown, description: "Uploaded file metadata and storage references" },
     ],
   },
 ]

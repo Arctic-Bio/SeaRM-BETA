@@ -59,8 +59,8 @@ export function InvoiceCreator({ onCreated }: Props) {
   const [dailyRateOverride, setDailyRateOverride] = useState("")
   const [daysOverride, setDaysOverride] = useState("")
 
-  // Load current crew (confirmed/active)
-  const { data: currentCrew } = useSWR("/api/crew?status=confirmed&limit=500", fetcher)
+  // Load current crew (active/volunteer)
+  const { data: currentCrew } = useSWR("/api/crew?status=active&limit=500", fetcher)
   const crewList = Array.isArray(currentCrew) ? currentCrew : currentCrew?.data ?? []
 
   // Load voyages/campaigns
@@ -71,10 +71,10 @@ export function InvoiceCreator({ onCreated }: Props) {
   const { data: positions } = useSWR("/api/positions?status=filled", fetcher)
   const assignedCrewIds = new Set((positions || []).filter((p: any) => p.assigned_crew_id).map((p: any) => p.assigned_crew_id))
 
-  // Merge: confirmed crew + filled position assigned crew
+  // Merge: active crew + filled position assigned crew
   const allCrewMap = new Map<string, any>()
   crewList.forEach((c: any) => allCrewMap.set(c.id, c))
-  // No need to add positions here since they reference crew_applications which are in crewList
+  // No need to add positions here since they reference crew which are in crewList
 
   const handleGenerate = async () => {
     if (!crewId || !genType) {

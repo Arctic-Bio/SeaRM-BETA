@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           skills[dbField] = extractSkillLevel(row, csvSkillName)
         }
 
-        // Store full application data as JSON
+        // Store full form data as JSON
         const applicationData: Record<string, string> = {}
         for (const [key, value] of Object.entries(row)) {
           if (value && value.trim()) {
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         }
 
         await sql`
-          INSERT INTO crew_applications (
+          INSERT INTO crew (
             first_name, last_name, email, phone,
             gender, country, city, date_of_birth,
             current_occupation, availability_start_date, duration,
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
             ${JSON.stringify(applicationData)},
             ${batchId},
             ${i + 1},
-            'new_applicant'
+            'application'
           )
         `
 

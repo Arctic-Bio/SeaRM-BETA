@@ -1,8 +1,8 @@
-import { STATUS_LABELS, STATUS_COLORS, type ApplicantStatus } from "@/lib/db"
+import { STATUS_LABELS, STATUS_COLORS, type CrewStatus } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
 interface StatusBadgeProps {
-  status: ApplicantStatus
+  status: CrewStatus
   className?: string
 }
 

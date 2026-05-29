@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET() {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -13,20 +13,20 @@ export async function GET() {
     if (!crewId) return NextResponse.json({ profile: null, assignments: [], requirements: [], documents: [], tips: [], requiredDocuments: [], tasks: [] })
 
     // Profile
-    const profileRows = await sql`SELECT * FROM crew_applications WHERE id = ${crewId}`
+    const profileRows = await sql`SELECT * FROM crew WHERE id = ${crewId}`
     const profile = profileRows[0] || null
 
-    // Active voyage assignments with correct column names
+    // Active voyage assignments with correct column names and position joins
     const assignments = await sql`
       SELECT ca.id, ca.status, ca.role,
         v.voyage_name, v.departure_date as start_date, v.return_date as end_date, v.status as voyage_status,
         v.departure_port, v.destination_port, v.mission_type,
         s.name as ship_name, s.type as vessel_type,
-        cp.position_name as position_title
+        p.name as position_title
       FROM crew_assignments ca
       JOIN voyages v ON ca.voyage_id = v.id
       LEFT JOIN ships s ON v.ship_id = s.id
-      LEFT JOIN crew_positions cp ON ca.position_id = cp.id
+      LEFT JOIN positions p ON ca.position_id = p.id
       WHERE ca.crew_id = ${crewId}
       ORDER BY v.departure_date DESC
       LIMIT 10
@@ -174,30 +174,30 @@ export async function GET() {
     const onboardingStages = [
       {
         key: "application",
-        label: "Application Submitted",
-        description: "Your application has been received",
+        label: "Profile Created",
+        description: "Your profile has been received",
         completed: true,
         date: profile?.created_at || null,
       },
       {
-        key: "reviewed",
-        label: "Application Reviewed",
-        description: "Your application has been reviewed by the team",
-        completed: ["reviewed", "awaiting_interview", "interview_completed", "candidate", "approved", "confirmed"].includes(profile?.status),
-        date: profile?.updated_at && profile?.status !== "new_applicant" ? profile?.updated_at : null,
+        key: "screening",
+        label: "Profile Screened",
+        description: "Your profile has been screened by the team",
+        completed: ["screening", "interview", "verified", "volunteer", "active", "standby"].includes(profile?.status),
+        date: profile?.updated_at && profile?.status !== "application" ? profile?.updated_at : null,
       },
       {
         key: "interview",
         label: "Interview",
         description: "Interview process completed",
-        completed: ["interview_completed", "candidate", "approved", "confirmed"].includes(profile?.status),
+        completed: ["interview", "verified", "volunteer", "active", "standby"].includes(profile?.status),
         date: null,
       },
       {
-        key: "approved",
-        label: "Approved",
-        description: "You have been approved to join",
-        completed: ["approved", "confirmed"].includes(profile?.status),
+        key: "verified",
+        label: "Verified",
+        description: "You have been verified and approved",
+        completed: ["verified", "volunteer", "active", "standby"].includes(profile?.status),
         date: null,
       },
       {
@@ -222,10 +222,10 @@ export async function GET() {
         date: null,
       },
       {
-        key: "confirmed",
-        label: "Confirmed & Ready",
-        description: "You are confirmed and ready for deployment",
-        completed: profile?.status === "confirmed",
+        key: "active",
+        label: "Active & Ready",
+        description: "You are active and ready for deployment",
+        completed: ["active", "standby"].includes(profile?.status),
         date: null,
       },
     ]
@@ -233,9 +233,9 @@ export async function GET() {
     // Build tips
     const tips: string[] = []
     if (profile) {
-      if (profile.status === "applied") tips.push("Your application is being reviewed. Make sure all required documents are uploaded.")
+      if (profile.status === "application") tips.push("Your profile is being reviewed. Make sure all required documents are uploaded.")
       if (profile.status === "screening") tips.push("You are in the screening phase. Ensure your certifications are current.")
-      if (profile.status === "accepted") tips.push("Congratulations on being accepted! Complete your onboarding checklist items.")
+      if (profile.status === "verified") tips.push("Congratulations on being verified! Complete your onboarding checklist items.")
       if (!profile.maritime_qualifications) tips.push("Add your maritime qualifications to strengthen your profile.")
       const missingRequired = requiredWithStatus.filter((r: any) => !r.fulfilled)
       if (missingRequired.length > 0) tips.push(`You are missing ${missingRequired.length} required document(s): ${missingRequired.map((r: any) => r.label).join(", ")}.`)

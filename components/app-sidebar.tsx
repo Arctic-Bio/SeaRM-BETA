@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Upload, Users, ChevronLeft, ChevronRight,
-  Ship, Navigation, CheckSquare, Kanban, Briefcase, Map, Download,
+  Ship, CheckSquare, Kanban, Briefcase, Map, Download,
   AlertTriangle, ClipboardList, Calendar, Shield, LogOut, Settings,
-  Wrench, BookOpen, Mail, Puzzle, Plug, Lock,
+  Wrench, BookOpen, Mail, Puzzle, Lock,
   Receipt, DatabaseBackup, Settings2, Bell, FileUp,
 } from "lucide-react"
 import { useState, useCallback } from "react"
@@ -31,7 +31,7 @@ const navSections = [
   {
     label: "Crew",
     items: [
-      { href: "/crew", label: "Applications", icon: Users, settingsKey: "page_crew", permission: PERMISSIONS.CREW.VIEW },
+      { href: "/crew", label: "Crew", icon: Users, settingsKey: "page_crew", permission: PERMISSIONS.CREW.VIEW },
       { href: "/positions", label: "Positions", icon: Briefcase, settingsKey: "page_crew", permission: PERMISSIONS.CREW.VIEW },
       { href: "/upload", label: "Upload CSV", icon: Upload, settingsKey: "page_crew", permission: PERMISSIONS.UPLOAD.CSV },
       { href: "/tasks", label: "Tasks", icon: CheckSquare, settingsKey: "page_tasks", permission: PERMISSIONS.TASKS.VIEW },
@@ -42,7 +42,7 @@ const navSections = [
     items: [
       { href: "/ships", label: "Ships", icon: Ship, settingsKey: "page_ships", permission: PERMISSIONS.SHIPS.VIEW },
       { href: "/voyages", label: "Campaigns", icon: Map, settingsKey: "page_voyages", permission: PERMISSIONS.CAMPAIGNS.VIEW },
-      { href: "/map", label: "Live Map", icon: Navigation, settingsKey: null, permission: PERMISSIONS.MAP.VIEW },
+
       { href: "/availability", label: "Crew Calendar", icon: Calendar, settingsKey: "page_availability", permission: PERMISSIONS.AVAILABILITY.VIEW },
     ],
   },
@@ -66,7 +66,7 @@ const navSections = [
       { href: "/users", label: "Users & Roles", icon: Shield, settingsKey: "page_users", sysadminOnly: true, permission: PERMISSIONS.USERS.VIEW },
       { href: "/admin/roles", label: "Role Manager", icon: Lock, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.ROLES.VIEW },
       { href: "/email", label: "Email Automation", icon: Mail, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
-      { href: "/integrations", label: "Widget Builder", icon: Plug, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
+
       { href: "/extensions", label: "Extensions", icon: Puzzle, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
       { href: "/settings", label: "Settings", icon: Settings, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
       { href: "/export", label: "Export Data", icon: Download, settingsKey: "page_export", permission: PERMISSIONS.REPORTS.EXPORT },

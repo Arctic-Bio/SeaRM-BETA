@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { getDb } from "@/lib/db"
 
 export async function GET() {
   const tokenUser = await getSession()
@@ -10,6 +8,7 @@ export async function GET() {
 
   // Always fetch fresh role + is_active from DB to handle role migrations and deactivations
   try {
+    const sql = getDb()
     const rows = await sql`SELECT id, email, name, role, crew_id, is_active FROM users WHERE id = ${tokenUser.id}`
     if (!rows.length || !rows[0].is_active) {
       return NextResponse.json({ user: null }, { status: 401 })

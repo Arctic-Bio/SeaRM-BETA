@@ -156,7 +156,7 @@ export function CsvUploader() {
       setUploadResult(result)
       setUploadState("success")
       toast.success(
-        `Successfully imported ${result.inserted} crew applications`
+        `Successfully imported ${result.inserted} crew members`
       )
     } catch (error) {
       clearInterval(progressInterval)
@@ -208,7 +208,7 @@ export function CsvUploader() {
                 or click to browse your files
               </p>
               <p className="mt-3 text-xs text-muted-foreground">
-                Supports crew application CSV exports from Google Forms
+                Supports crew CSV exports from Google Forms
               </p>
               <input
                 ref={fileInputRef}
@@ -262,7 +262,7 @@ export function CsvUploader() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Importing crew applications...
+                    Importing crew members...
                   </div>
                   <Progress value={uploadProgress} className="h-2" />
                 </div>
@@ -398,7 +398,7 @@ export function CsvUploader() {
               </Button>
               <Button onClick={handleUpload}>
                 <Upload className="mr-2 h-4 w-4" />
-                Import {parsedData.rows.length} Applications
+                Import {parsedData.rows.length} Crew Members
               </Button>
             </div>
           )}
@@ -409,7 +409,7 @@ export function CsvUploader() {
                 Upload Another File
               </Button>
               <Button asChild>
-                <a href="/crew">View Crew Applications</a>
+                <a href="/crew">View Crew Members</a>
               </Button>
             </div>
           )}

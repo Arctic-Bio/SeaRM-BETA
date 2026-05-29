@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         v.voyage_name,
         s.name as ship_name
       FROM tasks t
-      LEFT JOIN crew_applications c ON t.crew_id = c.id
+      LEFT JOIN crew c ON t.crew_id = c.id
       LEFT JOIN voyages v ON t.voyage_id = v.id
       LEFT JOIN ships s ON t.ship_id = s.id
       ${where}

@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { StarRating } from "@/components/star-rating"
 import {
-  APPLICANT_STATUSES, STATUS_LABELS, STATUS_COLORS,
-  type ApplicantStatus, type CrewApplication,
+  CREW_STATUSES, STATUS_LABELS, STATUS_COLORS,
+  type CrewStatus, type CrewMember,
 } from "@/lib/db"
 import {
   Loader2, MapPin, Anchor, GripVertical, Eye,
@@ -23,7 +23,7 @@ export default function PipelinePage() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const dragRef = useRef<string | null>(null)
 
-  const columns: Record<string, Partial<CrewApplication>[]> = data?.columns || {}
+  const columns: Record<string, Partial<CrewMember>[]> = data?.columns || {}
 
   const handleDragStart = (e: React.DragEvent, crewId: string) => {
     e.dataTransfer.setData("text/plain", crewId)
@@ -66,7 +66,7 @@ export default function PipelinePage() {
     if (member) {
       optimistic[currentStatus] = optimistic[currentStatus].filter((m) => m.id !== crewId)
       if (!optimistic[newStatus]) optimistic[newStatus] = []
-      optimistic[newStatus] = [{ ...member, status: newStatus as ApplicantStatus }, ...optimistic[newStatus]]
+      optimistic[newStatus] = [{ ...member, status: newStatus as CrewStatus }, ...optimistic[newStatus]]
       mutate({ columns: optimistic }, false)
     }
 
@@ -77,7 +77,7 @@ export default function PipelinePage() {
         body: JSON.stringify({ id: crewId, newStatus }),
       })
       if (!res.ok) throw new Error("Move failed")
-      toast.success(`Moved to ${STATUS_LABELS[newStatus as ApplicantStatus]}`)
+      toast.success(`Moved to ${STATUS_LABELS[newStatus as CrewStatus]}`)
       mutate()
     } catch {
       toast.error("Failed to update status")
@@ -98,16 +98,16 @@ export default function PipelinePage() {
       {/* Header */}
       <div className="mb-4 shrink-0">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Recruitment Pipeline
+          Crew Pipeline
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Drag applicants between stages to update their status.
+          Drag crew members between stages to update their status.
         </p>
       </div>
 
       {/* Kanban columns -- all fit in viewport, no horizontal scroll */}
       <div className="flex-1 grid grid-cols-8 gap-2 min-h-0">
-        {APPLICANT_STATUSES.map((status) => {
+        {CREW_STATUSES.map((status) => {
           const members = columns[status] || []
           return (
             <div

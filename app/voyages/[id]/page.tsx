@@ -22,7 +22,6 @@ import {
 import {
   VOYAGE_STATUSES, VOYAGE_STATUS_LABELS, VOYAGE_STATUS_COLORS,
   ASSIGNMENT_STATUS_LABELS, ASSIGNMENT_STATUS_COLORS,
-  COMMON_POSITIONS, DEPARTMENTS,
   type VoyageStatus, type AssignmentStatus,
   type Voyage, type CrewPosition, type CrewAssignment,
 } from "@/lib/db"
@@ -39,8 +38,9 @@ export default function VoyageDetailPage({ params }: { params: Promise<{ id: str
   const { data, isLoading, mutate } = useSWR(`/api/voyages/${id}`, fetcher)
   const { data: activitiesData, mutate: mutateActivities } = useSWR(`/api/activities?voyageId=${id}`, fetcher)
   const [posOpen, setPosOpen] = useState(false)
-  const [posForm, setPosForm] = useState({ position_name: "", department: "" })
+  const [posForm, setPosForm] = useState({ position_id: "" })
   const [saving, setSaving] = useState(false)
+  const { data: globalPositions } = useSWR("/api/positions/global", fetcher)
 
   const voyage: Voyage | null = data?.data || null
   const positions: CrewPosition[] = data?.positions || []
@@ -56,7 +56,7 @@ export default function VoyageDetailPage({ params }: { params: Promise<{ id: str
   }
 
   const handleAddPosition = async () => {
-    if (!posForm.position_name) { toast.error("Position name required"); return }
+    if (!posForm.position_id) { toast.error("Position required"); return }
     setSaving(true)
     try {
       const res = await fetch(`/api/voyages/${id}/positions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(posForm) })
@@ -64,7 +64,7 @@ export default function VoyageDetailPage({ params }: { params: Promise<{ id: str
       toast.success("Position added")
       mutate(); mutateActivities()
       setPosOpen(false)
-      setPosForm({ position_name: "", department: "" })
+      setPosForm({ position_id: "" })
     } catch { toast.error("Failed to add position") }
     finally { setSaving(false) }
   }
@@ -121,15 +121,9 @@ export default function VoyageDetailPage({ params }: { params: Promise<{ id: str
                   <DialogHeader><DialogTitle>Add Position</DialogTitle><DialogDescription>Open a new crew position for this voyage.</DialogDescription></DialogHeader>
                   <div className="flex flex-col gap-4 py-4">
                     <div><Label>Position *</Label>
-                      <Select value={posForm.position_name} onValueChange={(v) => setPosForm({ ...posForm, position_name: v })}>
+                      <Select value={posForm.position_id} onValueChange={(v) => setPosForm({ ...posForm, position_id: v })}>
                         <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
-                        <SelectContent>{COMMON_POSITIONS.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
-                      </Select>
-                    </div>
-                    <div><Label>Department</Label>
-                      <Select value={posForm.department} onValueChange={(v) => setPosForm({ ...posForm, department: v === "none" ? "" : v })}>
-                        <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                        <SelectContent><SelectItem value="none">No department</SelectItem>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
+                        <SelectContent>{(globalPositions || []).map((p: any) => (<SelectItem key={p.id} value={p.id}>{p.name} ({p.department})</SelectItem>))}</SelectContent>
                       </Select>
                     </div>
                   </div>

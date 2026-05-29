@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         skill_electrical, skill_electronics, skill_cooking, skill_media,
         skill_drone, skill_photography, skill_videography, skill_medical,
         skill_welding, skill_crane_operation, skill_biology_science
-      FROM crew_applications
+      FROM crew
       WHERE status != 'rejected'
       ORDER BY rating DESC, created_at DESC
     `

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { encrypt } from "@/lib/email/encryption"
 import { testConnection } from "@/lib/email/transport"
 import type { EmailProvider } from "@/lib/email/types"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET: List all providers (passwords masked)
 export async function GET() {
   try {
+    const sql = getDb()
     const rows = await sql`SELECT * FROM email_providers ORDER BY is_default DESC, created_at DESC`
     const providers = rows.map((r: any) => ({ ...r, password_encrypted: r.password_encrypted ? "********" : "" }))
     return NextResponse.json(providers)
@@ -20,6 +20,7 @@ export async function GET() {
 // POST: Create or update a provider, or test connection
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     const { action } = body
 
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
 // DELETE: Remove a provider
 export async function DELETE(req: NextRequest) {
   try {
+    const sql = getDb()
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
     await sql`DELETE FROM email_providers WHERE id = ${id}`

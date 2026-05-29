@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET: List queue items with filters
 export async function GET(req: NextRequest) {
   try {
+    const sql = getDb()
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 200)
@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
 // POST: Retry failed emails, cancel pending, or purge old
 export async function POST(req: NextRequest) {
   try {
+    const sql = getDb()
     const body = await req.json()
     const { action, id, ids } = body
 

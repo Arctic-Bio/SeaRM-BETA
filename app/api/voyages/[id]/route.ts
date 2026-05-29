@@ -23,9 +23,9 @@ export async function GET(
       SELECT cp.*, 
         ca.first_name || ' ' || ca.last_name as assigned_crew_name
       FROM crew_positions cp
-      LEFT JOIN crew_applications ca ON cp.assigned_crew_id = ca.id
+      LEFT JOIN crew ca ON cp.assigned_crew_id = ca.id
       WHERE cp.voyage_id = ${id}
-      ORDER BY cp.department, cp.position_name
+      ORDER BY p.department, p.name
     `
 
     // Get assignments
@@ -35,7 +35,7 @@ export async function GET(
         c.email as crew_email,
         c.country as crew_country
       FROM crew_assignments ca
-      JOIN crew_applications c ON ca.crew_id = c.id
+      JOIN crew c ON ca.crew_id = c.id
       WHERE ca.voyage_id = ${id}
       ORDER BY ca.role
     `

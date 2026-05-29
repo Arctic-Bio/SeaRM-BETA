@@ -25,7 +25,7 @@ const PREMADE_EXTENSIONS = [
   {
     slug: "slack-crew-notifier",
     name: "Slack Crew Notifier",
-    description: "Posts crew application events, approvals, and voyage departures to a Slack channel via incoming webhook. Keeps your team in the loop without checking the dashboard.",
+    description: "Posts crew status changes, approvals, and voyage departures to a Slack channel via incoming webhook. Keeps your team in the loop without checking the dashboard.",
     version: "1.0.0",
     author: "SeaRM Team",
     category: "communication",
@@ -34,9 +34,8 @@ const PREMADE_EXTENSIONS = [
     tags: ["slack", "notifications", "crew"],
     permissions: ["register:hooks", "read:crew", "access:api"],
     hooks: [
-      { name: "crew.application.received", type: "event", handler: "notifySlack", priority: 10, description: "Notify when a new application is submitted" },
-      { name: "crew.application.approved", type: "event", handler: "notifySlack", priority: 10, description: "Notify when an application is approved" },
-      { name: "crew.application.rejected", type: "event", handler: "notifySlack", priority: 10, description: "Notify when an application is rejected" },
+      { name: "crew.status.changed", type: "event", handler: "notifySlack", priority: 10, description: "Notify when a crew member status changes" },
+      { name: "crew.profile.updated", type: "event", handler: "notifySlack", priority: 10, description: "Notify when a crew member profile is updated" },
       { name: "voyage.departed", type: "event", handler: "notifySlack", priority: 10, description: "Notify when a voyage departs" },
     ],
     config_schema: [
@@ -101,7 +100,7 @@ const PREMADE_EXTENSIONS = [
   {
     slug: "crew-onboarding-automator",
     name: "Crew Onboarding Automator",
-    description: "Automates the crew onboarding workflow when an application is approved. Creates checklist items, sends welcome emails, assigns default training tasks, and logs the onboarding event for audit.",
+    description: "Automates the crew onboarding workflow when a crew member is approved. Creates checklist items, sends welcome emails, assigns default training tasks, and logs the onboarding event for audit.",
     version: "1.0.0",
     author: "SeaRM Team",
     category: "crew",
@@ -110,7 +109,7 @@ const PREMADE_EXTENSIONS = [
     tags: ["crew", "onboarding", "automation", "tasks", "email"],
     permissions: ["register:hooks", "read:crew", "write:crew", "write:tasks", "write:checklists", "send:email"],
     hooks: [
-      { name: "crew.application.approved", type: "event", handler: "startOnboarding", priority: 1, description: "Kick off the full onboarding workflow on approval" },
+      { name: "crew.status.changed", type: "event", handler: "startOnboarding", priority: 1, description: "Kick off the full onboarding workflow on approval" },
       { name: "crew.checklist.completed", type: "event", handler: "checkOnboardingComplete", priority: 5, description: "Check if all onboarding items are done" },
       { name: "crew.assignment.created", type: "event", handler: "assignTrainingTasks", priority: 10, description: "Auto-assign training tasks when crew is assigned to a voyage" },
     ],
@@ -439,7 +438,7 @@ function InstallTab({ onInstalled }: { onInstalled: () => void }) {
     category: "general",
     permissions: ["register:hooks", "read:crew", "send:email"],
     hooks: [
-      { name: "crew.application.received", type: "event", handler: "onCrewApply", priority: 10, description: "Runs when a new crew application is received" }
+      { name: "crew.status.changed", type: "event", handler: "onStatusChange", priority: 10, description: "Runs when a crew member status changes" }
     ],
     config_schema: [
       { key: "webhook_url", label: "Webhook URL", type: "url", description: "URL to POST notifications to", placeholder: "https://example.com/webhook" },
@@ -603,9 +602,9 @@ function DocsTab() {
 {
   "hooks": [
     {
-      "name": "crew.application.received",
+      "name": "crew.status.changed",
       "type": "event",
-      "handler": "onCrewApply",
+      "handler": "onStatusChange",
       "priority": 10,
       "timeout_ms": 5000,
       "conditions": {
@@ -617,7 +616,7 @@ function DocsTab() {
 \`\`\`
 
 **Available Events:**
-- \`crew.application.received/approved/rejected\`
+- \`crew.status.changed\`, \`crew.profile.updated\`
 - \`crew.profile.updated\`, \`crew.status.changed\`
 - \`document.uploaded/signed/verified/expired\`
 - \`voyage.created/departed/completed\`
@@ -786,8 +785,8 @@ Routes are automatically namespaced and protected. Set \`auth_required: false\` 
   "category": "communication",
   "permissions": ["register:hooks", "read:crew", "access:api"],
   "hooks": [
-    { "name": "crew.application.received", "type": "event", "handler": "notifySlack", "priority": 10 },
-    { "name": "crew.application.approved", "type": "event", "handler": "notifySlack", "priority": 10 },
+    { "name": "crew.status.changed", "type": "event", "handler": "notifySlack", "priority": 10 },
+    { "name": "crew.profile.updated", "type": "event", "handler": "notifySlack", "priority": 10 },
     { "name": "voyage.departed", "type": "event", "handler": "notifySlack", "priority": 10 }
   ],
   "config_schema": [

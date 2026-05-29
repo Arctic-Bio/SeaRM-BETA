@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
           c.first_name || ' ' || c.last_name as crew_name,
           v.voyage_name, s.name as ship_name
         FROM activities a
-        LEFT JOIN crew_applications c ON a.crew_id = c.id
+        LEFT JOIN crew c ON a.crew_id = c.id
         LEFT JOIN voyages v ON a.voyage_id = v.id
         LEFT JOIN ships s ON a.ship_id = s.id
         WHERE a.crew_id = ${crewId}
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
           c.first_name || ' ' || c.last_name as crew_name,
           v.voyage_name, s.name as ship_name
         FROM activities a
-        LEFT JOIN crew_applications c ON a.crew_id = c.id
+        LEFT JOIN crew c ON a.crew_id = c.id
         LEFT JOIN voyages v ON a.voyage_id = v.id
         LEFT JOIN ships s ON a.ship_id = s.id
         WHERE a.voyage_id = ${voyageId}
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           c.first_name || ' ' || c.last_name as crew_name,
           v.voyage_name, s.name as ship_name
         FROM activities a
-        LEFT JOIN crew_applications c ON a.crew_id = c.id
+        LEFT JOIN crew c ON a.crew_id = c.id
         LEFT JOIN voyages v ON a.voyage_id = v.id
         LEFT JOIN ships s ON a.ship_id = s.id
         WHERE a.ship_id = ${shipId}
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
           c.first_name || ' ' || c.last_name as crew_name,
           v.voyage_name, s.name as ship_name
         FROM activities a
-        LEFT JOIN crew_applications c ON a.crew_id = c.id
+        LEFT JOIN crew c ON a.crew_id = c.id
         LEFT JOIN voyages v ON a.voyage_id = v.id
         LEFT JOIN ships s ON a.ship_id = s.id
         ORDER BY a.created_at DESC

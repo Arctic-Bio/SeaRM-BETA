@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { registerUser, getSession, type UserRole } from "@/lib/auth"
 
 export async function POST(req: NextRequest) {
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email, password, and name required" }, { status: 400 })
     }
 
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = getDb()
     const countResult = await sql`SELECT COUNT(*) as count FROM users`
     const isFirstUser = parseInt(countResult[0].count as string) === 0
 

@@ -430,7 +430,7 @@ export default function SettingsPage() {
                 Always Required Documents
               </CardTitle>
               <CardDescription>
-                Upload documents here once and they will automatically appear in every crew member and applicant portal.
+                Upload documents here once and they will automatically appear in every crew member portal.
                 Documents marked for e-signature will require each crew member to sign individually.
               </CardDescription>
             </div>

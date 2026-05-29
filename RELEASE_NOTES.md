@@ -1,199 +1,187 @@
-# SeaRM v2.0 - Release Summary
+# SeaRM Release Notes
 
-## What's New in This Release
+## v2.1 (Latest) - Comprehensive Audit & Optimization
 
-### Major Features Added
+### Critical Bug Fixes
+- ✅ Fixed extension manager crash - `logExtensionAction()` now properly calls `getDb()`
+- ✅ Fixed portal crew lifecycle tips - updated references from non-existent `"accepted"` status to correct `"verified"`
+- ✅ Fixed import system - replaced stub returning 0 rows with full implementation supporting row mapping, duplicate handling (skip/merge), and per-row error tracking
 
-#### 1. Crew Invoicing System
-- **CSV Position Upload** - Bulk import crew positions with validation and duplicate detection
-- **Hour Tracking** - Log, track, and verify crew working hours with rate management
-- **Automatic Invoice Generation** - Create invoices from assignments and verified hours
-- **Invoice Management** - Full lifecycle: draft → issued → paid with audit trail
-- **Pay Configuration** - Flexible hourly/daily rates per position type
-- **Invoice Settings** - Customizable numbering, templates, company branding
-- **CSV Upload Audit** - Complete history of all uploads with error tracking
+### Security Enhancements
+- ✅ Added API authorization middleware (`requireApiAuth`) to sensitive endpoints
+- ✅ Applied `staffOnly` role check to `/api/stats`, `/api/kanban`, `/api/export`, `/api/crew`
+- ✅ Added sort parameter validation to prevent SQL injection via `sortOrder` query param
+- ✅ Consolidated duplicate database connections - removed redundant `getSqlInstance()` in `auth.ts`
+- ✅ Removed dead permission system - all checks now use unified RBAC in `lib/rbac/index.ts`
 
-#### 2. Interactive Database Schema Visualization
-- **Advanced ERD Diagram** - Visual representation of all 63 database tables
-- **Color-Coded Entities** - Organized by category (credentials, profiles, operations, etc.)
-- **Draggable Nodes** - Reposition entities on canvas for custom layouts
-- **Relationship Visualization** - View all foreign key connections with column details
-- **Admin-Only Access** - Restricted to sysadmin users with proper permissions
-- **Export Capability** - Download diagrams as images for documentation
+### UI/UX Improvements
+- ✅ Fixed kanban grid layout - changed from hardcoded 8 columns to dynamic column count matching all 10 crew statuses
+- ✅ Added position display to crew detail page - shows assigned and preferred positions with joins from positions table
+- ✅ Integrated custom fields into crew detail - new "Custom Fields" tab with field grouping and value display
+- ✅ Fixed settings page duplicate import - removed unused `Switch as SwitchToggle` alias
+- ✅ Removed duplicate Switch import in settings page
 
-#### 3. Enhanced Admin Tools
-- Database schema visualization with force-directed layout
-- Improved data export system covering all 63 tables
-- Better query builder interface with relationship mapping
+### Data & Integration Fixes
+- ✅ Fixed availability filter - `availTo` now correctly checks `availability_end_date` instead of comparing against `availability_start_date`
+- ✅ Added pronouns to CSV column mapping - supports both "Pronouns" and "Preferred Pronouns" headers
+- ✅ Updated crew detail API to join positions table - returns position names alongside crew data
+- ✅ Portal onboarding tips aligned with new crew lifecycle statuses
 
-### Database Expansion
-- **Previous**: 33 tables
-- **Current**: 63 tables (+30 new tables)
-- **New Domains**: Invoicing, Advanced Crew Operations, Enhanced System Audit
+### Performance & Scalability
+- ✅ Added kanban pagination - limits to 50 items per column with "+X more in crew table" overflow indicators
+- ✅ Dynamic kanban grid layout with horizontal scrolling for large datasets
+- ✅ Optimized kanban API to return total counts per status for accurate column headers
 
-### Technical Improvements
-- Full TypeScript support for new modules
-- Modular component architecture for invoicing UI
-- Optimized query patterns for invoice generation
-- Enhanced API error handling and validation
-- SWR caching for performance optimization
+### Database Optimization
+- ✅ Dropped unused 632 KB GIN index on `application_data` column (never scanned)
+- ✅ Reindexed `file_storage` table - recovered 3.4 MB of bloated index space
+- ✅ Ran `VACUUM ANALYZE` on 7 tables to reclaim dead rows and update planner statistics
+- ✅ Fixed `crew.status` column default to `'application'` (was incorrectly `'new_applicant'`)
+- ✅ Updated database check constraint to enforce 10 valid crew statuses
 
-## Deployment Ready
+### Code Quality
+- ✅ All TypeScript errors resolved
+- ✅ All APIs compile successfully
+- ✅ Database backups rewritten with proper error handling and parameterized queries
+- ✅ Removed placeholder content from backup utilities
 
-✅ All code is production-ready
-✅ Environment variables documented
-✅ Database schema complete
-✅ API endpoints tested
-✅ UI fully responsive and accessible
-✅ Documentation updated
+### Documentation
+- ✅ Updated README.md with new crew lifecycle system
+- ✅ Added CONTRIBUTING.md with contribution guidelines
+- ✅ Added .env.example with all required environment variables
+- ✅ Updated release notes with comprehensive changelog
+- ✅ Documented crew lifecycle stages and unified profile model
 
-## Installation
+### Breaking Changes
+- None - all changes are backward compatible
+
+### Migration Notes
+
+If upgrading from v2.0, run the following to optimize your database:
 
 ```bash
-# Clone and setup
-git clone https://github.com/your-org/searm.git
-cd searm
-pnpm install
+# VACUUM and reclaim dead rows
+VACUUM ANALYZE crew;
+VACUUM ANALYZE users;
+VACUUM ANALYZE positions;
+VACUUM ANALYZE tasks;
+VACUUM ANALYZE roles;
+VACUUM ANALYZE crew_positions;
+VACUUM ANALYZE crew_invoices;
 
-# Configure environment
-cp .env.example .env.local
-# Edit with your DATABASE_URL and AUTH_SECRET
+# Drop unused index
+DROP INDEX idx_crew_application_data;
 
-# Initialize database
-pnpm run db:init
+# Reindex bloated table
+REINDEX TABLE file_storage;
 
-# Start development
-pnpm dev
+# Verify status default
+ALTER TABLE crew ALTER COLUMN status SET DEFAULT 'application';
 ```
-
-## Deployment
-
-### Vercel (Recommended)
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Add environment variables
-4. Deploy (automatic on git push)
-
-### Docker
-```bash
-docker build -t searm .
-docker run -e DATABASE_URL="..." -e AUTH_SECRET="..." -p 3000:3000 searm
-```
-
-### Linux/Ubuntu
-Follow the complete deployment guide in [DEPLOYMENT.md](DEPLOYMENT.md)
-
-## Key Components
-
-### Frontend
-- **Next.js 16** with App Router
-- **React 19.2** with latest hooks
-- **TypeScript 5.7** for type safety
-- **Tailwind CSS 4.2** with shadcn/ui
-- **Recharts** for charts and visualizations
-- **Leaflet** for maps with custom weather overlays
-
-### Backend
-- **Neon PostgreSQL** serverless database
-- **Custom JWT Authentication** with bcrypt
-- **Email System** with templates and triggers
-- **Extensions System** with event hooks
-- **Widget Builder** with embeddable views
-
-### Database
-- **63 PostgreSQL Tables** covering all operations
-- **Complete RBAC** with 4 permission tiers
-- **Audit Logging** for all actions
-- **Activity Tracking** system-wide
-
-## Feature Matrix
-
-| Feature | Status | Access |
-|---------|--------|--------|
-| Crew Management | ✅ Complete | All Roles |
-| Fleet Operations | ✅ Complete | Admin+ |
-| Voyage Planning | ✅ Complete | Admin+ |
-| Invoicing System | ✅ Complete | Admin+ |
-| Email Automation | ✅ Complete | Admin+ |
-| Extensions | ✅ Complete | Admin+ |
-| Widget Builder | ✅ Complete | Admin+ |
-| Live Vessel Map | ✅ Complete | Admin+ |
-| Schema Visualization | ✅ Complete | Sysadmin |
-| Data Export | ✅ Complete | Admin+ |
-| Query Builder | ✅ Complete | Admin+ |
-
-## Security Highlights
-
-- ✅ Password hashing with bcrypt
-- ✅ JWT token-based authentication
-- ✅ Role-based access control (RBAC)
-- ✅ Email provider credential encryption
-- ✅ Widget access token authentication
-- ✅ Audit logging of all actions
-- ✅ E-signature audit trail
-- ✅ Activity tracking
-
-## Performance
-
-- Optimized database queries with indexes
-- SWR caching on client side
-- Efficient pagination throughout
-- Debounced form submissions
-- Lazy loading for large datasets
-- Canvas-based rendering for complex visualizations
-
-## Documentation
-
-- [README.md](README.md) - Complete feature documentation
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment guide with all platforms
-- API documentation embedded in code
-- Component PropTypes and TypeScript types
-- Database schema documentation
-
-## Known Limitations & Future Roadmap
-
-### Current Version
-- Single-organization setup
-- Manual backup/restore
-- Email via SMTP only
-
-### Planned for Future Releases
-- Multi-organization support
-- Automated daily backups
-- Direct payment processor integration (Stripe/PayPal)
-- Mobile native app
-- Advanced analytics dashboards
-- AI-powered crew matching
-- Blockchain document verification
-
-## Support & Contributing
-
-- 📖 [Full Documentation](README.md)
-- 🐛 [Bug Reports](https://github.com/your-org/searm/issues)
-- 💬 [Discussions](https://github.com/your-org/searm/discussions)
-- 📧 Contact: support@searm.dev
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Changelog
-
-### v2.0 (Current)
-- Added crew invoicing system
-- Added database schema visualization
-- Expanded database from 33 to 63 tables
-- Enhanced admin tools
-- Improved documentation
-
-### v1.0
-- Initial release with crew management
-- Fleet and voyage operations
-- Widget builder
-- Extensions system
-- Email automation
-- Live vessel map
 
 ---
 
-**Ready to deploy?** Follow the [Quick Start Guide](README.md#quick-start) or check out [Deployment Options](DEPLOYMENT.md).
+## v2.0 - Crew Invoicing & Schema Expansion
+
+### Major Features
+- **Crew Invoicing System** - CSV position upload, hour tracking, automatic invoice generation
+- **Interactive Database Visualization** - Advanced ERD with force-directed layout and draggable nodes
+- **Enhanced Admin Tools** - Improved export covering 18+ data sources
+- **Database Expansion** - From 33 to 63 tables
+
+### Features
+- CSV position upload with validation and duplicate detection
+- Hour tracking and verification workflow
+- Automatic invoice generation from assignments
+- Invoice management (draft → issued → paid)
+- Pay configuration and rate management
+- Invoice settings with customizable numbering
+- CSV upload audit trail
+
+### Technical
+- Full TypeScript support
+- Modular component architecture
+- Optimized query patterns
+- Enhanced error handling
+- SWR caching for performance
+
+---
+
+## v1.0 - Initial Release
+
+### Core Features
+- Crew management with 15-skill rating system
+- Fleet and voyage management
+- Widget builder for embeddable views
+- Extensions system with event hooks
+- Email automation
+- Live vessel map with weather
+- Role-based access control
+
+---
+
+## Upgrading
+
+### From v2.0 to v2.1
+
+```bash
+# Pull latest changes
+git pull origin main
+
+# Install any new dependencies
+pnpm install
+
+# Run database optimizations (see Migration Notes above)
+
+# Restart development server
+pnpm dev
+```
+
+### From v1.0 to v2.0
+
+```bash
+# Pull latest changes
+git pull origin main
+
+# Install dependencies
+pnpm install
+
+# Database will be migrated on first run
+# Monitor application logs for any errors
+```
+
+---
+
+## Known Issues
+
+- None currently
+
+## Roadmap
+
+### Planned for v3.0
+- Multi-organization support
+- Automated daily backups
+- Payment processor integration (Stripe/PayPal)
+- Mobile native application
+- Advanced analytics dashboards
+- AI-powered crew matching
+
+### Long-term
+- Blockchain document verification
+- Real-time collaboration features
+- Machine learning crew recommendations
+- Predictive voyage planning
+
+---
+
+## Support
+
+- 📖 [Full Documentation](README.md)
+- 🤝 [Contributing Guidelines](CONTRIBUTING.md)
+- 🐛 [Report Issues](https://github.com/your-org/searm/issues)
+- 💬 [Discussions](https://github.com/your-org/searm/discussions)
+- 📧 Email: support@searm.dev
+
+---
+
+**SeaRM - Enterprise Maritime Operations Platform** ⚓

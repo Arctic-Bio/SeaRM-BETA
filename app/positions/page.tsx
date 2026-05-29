@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Progress } from "@/components/ui/progress"
 import {
-  DEPARTMENTS, COMMON_POSITIONS, SKILL_FIELDS, SKILL_LEVELS,
+  DEPARTMENTS, SKILL_FIELDS, SKILL_LEVELS,
   POSITION_STATUS_LABELS, POSITION_STATUS_COLORS, TASK_PRIORITIES,
   type PositionStatus,
 } from "@/lib/db"
@@ -49,8 +49,8 @@ export default function PositionsPage() {
 
   // Create form state
   const [form, setForm] = useState({
-    voyage_id: "", position_name: "", department: "", priority: "medium",
-    min_skill_level: "Basic", notes: "",
+    voyage_id: "", position_id: "", ship_id: "", priority: "medium",
+    notes: "",
     required_skills: [] as { skill: string; level: string }[],
     is_paid: false, hourly_rate: "", daily_rate: "", estimated_hours: "",
   })
@@ -59,10 +59,10 @@ export default function PositionsPage() {
 
   const params = new URLSearchParams()
   if (statusFilter) params.set("status", statusFilter)
-  if (deptFilter) params.set("department", deptFilter)
 
   const { data: positions, isLoading, mutate } = useSWR(`/api/positions?${params}`, fetcher)
   const { data: voyages } = useSWR("/api/voyages", fetcher)
+  const { data: globalPositions } = useSWR("/api/positions/global", fetcher)
 
   const voyageList = Array.isArray(voyages) ? voyages : voyages?.data ?? []
 
@@ -71,8 +71,8 @@ export default function PositionsPage() {
   const paidCount = (positions || []).filter((p: any) => p.is_paid).length
 
   const handleCreate = async () => {
-    if (!form.voyage_id || !form.position_name) {
-      toast.error("Voyage and position name are required")
+    if (!form.voyage_id || !form.position_id) {
+      toast.error("Voyage and position are required")
       return
     }
     await fetch("/api/positions", {
@@ -373,19 +373,10 @@ export default function PositionsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Position</label>
-                <Select value={form.position_name} onValueChange={(v) => setForm((f) => ({ ...f, position_name: v }))}>
+                <Select value={form.position_id} onValueChange={(v) => setForm((f) => ({ ...f, position_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select position..." /></SelectTrigger>
                   <SelectContent>
-                    {COMMON_POSITIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Department</label>
-                <Select value={form.department} onValueChange={(v) => setForm((f) => ({ ...f, department: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select dept..." /></SelectTrigger>
-                  <SelectContent>
-                    {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    {(globalPositions || []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name} ({p.department})</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

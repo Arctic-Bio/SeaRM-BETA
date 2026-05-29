@@ -30,7 +30,7 @@ export async function PATCH(
     if (body.status === "on_board" || body.sign_on_date) {
       const assignment = await sql`
         SELECT ca.crew_id, ca.voyage_id, c.first_name, c.last_name
-        FROM crew_assignments ca JOIN crew_applications c ON ca.crew_id = c.id
+        FROM crew_assignments ca JOIN crew c ON ca.crew_id = c.id
         WHERE ca.id = ${id}
       `
       if (assignment[0]) {
@@ -45,7 +45,7 @@ export async function PATCH(
     if (body.status === "signed_off" || body.sign_off_date) {
       const assignment = await sql`
         SELECT ca.crew_id, ca.voyage_id, c.first_name, c.last_name, ca.sign_on_date, ca.sign_off_date
-        FROM crew_assignments ca JOIN crew_applications c ON ca.crew_id = c.id
+        FROM crew_assignments ca JOIN crew c ON ca.crew_id = c.id
         WHERE ca.id = ${id}
       `
       if (assignment[0]) {
@@ -69,7 +69,7 @@ export async function PATCH(
       SELECT ca.*, c.first_name || ' ' || c.last_name as crew_name,
         v.voyage_name, s.name as ship_name
       FROM crew_assignments ca
-      JOIN crew_applications c ON ca.crew_id = c.id
+      JOIN crew c ON ca.crew_id = c.id
       JOIN voyages v ON ca.voyage_id = v.id
       LEFT JOIN ships s ON v.ship_id = s.id
       WHERE ca.id = ${id}

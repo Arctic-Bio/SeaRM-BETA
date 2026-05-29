@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const sql = getDb()
     const { id } = await params
     const body = await req.json()
     if (body.items) {
@@ -27,6 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const sql = getDb()
     const { id } = await params
     await sql.query(`DELETE FROM onboarding_checklists WHERE id = $1::uuid`, [id])
     return NextResponse.json({ success: true })

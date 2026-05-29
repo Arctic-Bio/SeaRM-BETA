@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
     const safeOrder = sortOrder === "asc" ? "ASC" : "DESC"
 
     // Count query
-    const countQuery = `SELECT COUNT(DISTINCT c.id) as count FROM crew_applications c ${tagJoin} ${whereClause}`
+    const countQuery = `SELECT COUNT(DISTINCT c.id) as count FROM crew c ${tagJoin} ${whereClause}`
     const countResult = await sql.query(countQuery, params)
     const total = parseInt(countResult[0].count as string)
 
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
         c.skill_welding, c.skill_crane_operation, c.skill_biology_science,
         c.notes, c.upload_batch_id, c.csv_row_number,
         COALESCE((SELECT json_agg(ct.tag ORDER BY ct.tag) FROM crew_tags ct WHERE ct.crew_id = c.id), '[]'::json) as tags
-      FROM crew_applications c
+      FROM crew c
       ${tagJoin}
       ${whereClause}
       ORDER BY ${safeSort} ${safeOrder}
@@ -195,7 +195,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 })
-    await sql`DELETE FROM crew_applications WHERE id = ${id}`
+    await sql`DELETE FROM crew WHERE id = ${id}`
     return NextResponse.json({ success: true })
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error"

@@ -4,13 +4,38 @@ import { getDb } from "@/lib/db"
 
 // All tables we track for backup
 const BACKUP_TABLES = [
-  "users", "crew_applications", "ships", "voyages", "crew_positions",
-  "crew_assignments", "crew_sea_time", "crew_checkins", "tasks", "documents",
-  "incidents", "ship_maintenance", "ship_supplies", "activities",
-  "crew_tags", "onboarding_templates", "onboarding_items",
-  "onboarding_checklists", "onboarding_checklist_items",
-  "email_templates", "email_queue", "crew_invoices", "invoice_line_items",
-  "invoice_settings", "crew_pay_config", "current_crew",
+  // Core
+  "users", "roles", "role_permissions", "user_roles", "custom_roles",
+  // Crew
+  "crew", "crew_assignments", "crew_sea_time", "crew_checkins",
+  "crew_tags", "crew_hourly_logs", "crew_pay_config",
+  // Fleet & operations
+  "ships", "ship_positions", "ship_maintenance", "ship_supplies",
+  "voyages", "voyage_legs", "positions", "crew_positions",
+  "ports", "countries",
+  // Tasks & safety
+  "tasks", "documents", "incidents", "activities",
+  "onboarding_checklists",
+  // Finance
+  "crew_invoices", "invoice_line_items", "invoice_settings",
+  // Email
+  "email_templates", "email_queue", "email_triggers", "email_providers",
+  // Extensions
+  "extensions", "extension_hooks", "extension_config", "extension_logs",
+  // Files & storage
+  "file_storage", "saved_views", "saved_tools", "dashboard_widgets",
+  // Settings & SSO
+  "site_settings", "sso_providers", "sso_credentials", "sso_linked_accounts", "sso_audit_log",
+  // Integrations
+  "integrations", "integration_logs", "integration_syncs", "import_jobs",
+  // Notifications
+  "notification_preferences", "notification_rules", "notifications",
+  // Custom fields
+  "custom_field_definitions", "custom_field_values",
+  // Backup meta (excluded from backup itself)
+  // "backup_connections", "backup_history",
+  // Audit
+  "signature_audit_log",
 ]
 
 // GET: list saved connections & backup history

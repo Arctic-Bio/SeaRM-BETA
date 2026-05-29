@@ -5,9 +5,8 @@
 
 import { getActiveHooksForEvent, recordExtensionError, logExtensionAction, getExtensionConfigRaw } from "./manager"
 import type { ExtensionContext } from "./types"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 // Built-in hook handlers registry (extensions register their handlers here)
 const handlerRegistry: Map<string, (ctx: ExtensionContext, event: string, data: any) => Promise<any>> = new Map()
@@ -19,6 +18,7 @@ export function registerHandler(key: string, handler: (ctx: ExtensionContext, ev
 
 // Create an extension context for a hook execution
 async function createContext(extensionId: string, slug: string): Promise<ExtensionContext> {
+  const sql = getDb()
   const config = await getExtensionConfigRaw(extensionId)
   return {
     extensionId,

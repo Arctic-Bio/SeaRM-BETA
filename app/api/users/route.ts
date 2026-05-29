@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getDb } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET() {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session || !["sysadmin", "captain", "hr"].includes(session.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -14,7 +14,7 @@ export async function GET() {
       SELECT u.id, u.email, u.name, u.role, u.crew_id, u.is_active, u.last_login, u.created_at,
         ca.first_name, ca.last_name
       FROM users u
-      LEFT JOIN crew_applications ca ON u.crew_id = ca.id
+      LEFT JOIN crew ca ON u.crew_id = ca.id
       ORDER BY u.created_at DESC
     `
     return NextResponse.json(users)
@@ -25,6 +25,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const sql = getDb()
     const session = await getSession()
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const dbCheck = await sql`SELECT role FROM users WHERE id = ${session.id} AND is_active = true`

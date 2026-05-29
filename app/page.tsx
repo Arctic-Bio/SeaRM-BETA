@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "@/components/status-badge"
 import { StarRating } from "@/components/star-rating"
-import type { ApplicantStatus } from "@/lib/db"
+import type { CrewStatus } from "@/lib/db"
 import {
   Users,
   Anchor,
@@ -18,7 +18,6 @@ import {
   UserCheck,
   FileText,
   Ship,
-  Navigation,
   CheckSquare,
   Clock,
   AlertTriangle,
@@ -57,13 +56,13 @@ const PRIORITY_STYLES: Record<string, string> = {
 }
 
 const PIPELINE_STAGES = [
-  { key: "new_applicant", label: "New", color: "oklch(0.55 0.15 250)" },
-  { key: "reviewed", label: "Reviewed", color: "oklch(0.60 0.15 170)" },
-  { key: "awaiting_interview", label: "Interview", color: "oklch(0.72 0.14 75)" },
-  { key: "interview_completed", label: "Interviewed", color: "oklch(0.65 0.20 30)" },
-  { key: "candidate", label: "Candidate", color: "oklch(0.50 0.10 290)" },
-  { key: "approved", label: "Approved", color: "oklch(0.55 0.16 155)" },
-  { key: "confirmed", label: "Confirmed", color: "oklch(0.45 0.18 155)" },
+  { key: "application", label: "Application", color: "oklch(0.55 0.15 250)" },
+  { key: "screening", label: "Screening", color: "oklch(0.60 0.15 170)" },
+  { key: "interview", label: "Interview", color: "oklch(0.72 0.14 75)" },
+  { key: "verified", label: "Verified", color: "oklch(0.65 0.20 30)" },
+  { key: "volunteer", label: "Volunteer", color: "oklch(0.50 0.10 290)" },
+  { key: "active", label: "Active", color: "oklch(0.55 0.16 155)" },
+  { key: "standby", label: "Standby", color: "oklch(0.45 0.18 155)" },
 ] as const
 
 function formatRelativeTime(dateStr: string) {
@@ -130,7 +129,7 @@ export default function DashboardPage() {
             {"Welcome to SeaRM"}
           </h2>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed text-pretty">
-            Your crew management command center. Get started by adding vessels to your fleet or uploading crew application data from CSV.
+            Your crew management command center. Get started by adding vessels to your fleet or uploading crew data from CSV.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -153,18 +152,18 @@ export default function DashboardPage() {
 
   const newCount =
     stats.statusCounts?.find(
-      (s: { status: string; count: number }) => s.status === "new_applicant"
+      (s: { status: string; count: number }) => s.status === "application"
     )?.count || 0
-  const confirmedCount =
+  const activeCount =
     stats.statusCounts?.find(
-      (s: { status: string; count: number }) => s.status === "confirmed"
+      (s: { status: string; count: number }) => s.status === "active"
     )?.count || 0
   const inPipeline = stats.statusCounts
     ?.filter(
       (s: { status: string; count: number }) =>
-        s.status !== "new_applicant" &&
+        s.status !== "application" &&
         s.status !== "rejected" &&
-        s.status !== "confirmed"
+        s.status !== "active"
     )
     .reduce((sum: number, s: { count: number }) => sum + s.count, 0) || 0
 
@@ -172,7 +171,7 @@ export default function DashboardPage() {
   const pipelineData = PIPELINE_STAGES.map((stage) => ({
     ...stage,
     count: parseInt(stats.pipeline?.[stage.key] || "0"),
-  })).filter((s) => s.count > 0 || s.key === "new_applicant")
+  })).filter((s) => s.count > 0 || s.key === "application")
 
   // Skill chart data
   const skillData = stats.skillStats
@@ -299,10 +298,10 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground leading-none">
-                  {confirmedCount}
+                  {activeCount}
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Confirmed
+                  Active
                 </p>
               </div>
             </div>
@@ -331,14 +330,14 @@ export default function DashboardPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-chart-5/10">
-                <Navigation className="h-4 w-4 text-chart-5" />
+                <CalendarClock className="h-4 w-4 text-chart-5" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground leading-none">
                   {stats.fleet?.activeVoyages || 0}
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Voyages
+                  Campaigns
                 </p>
               </div>
             </div>
@@ -581,7 +580,7 @@ export default function DashboardPage() {
                     return (
                       <div key={s.status} className="flex items-center gap-3">
                         <StatusBadge
-                          status={s.status as ApplicantStatus}
+                          status={s.status as CrewStatus}
                         />
                         <div className="flex-1">
                           <Progress value={pct} className="h-1.5" />
@@ -711,7 +710,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 6: Maritime Quals + Recent Applications */}
+      {/* Row 6: Maritime Quals + Recent Crew */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Maritime Qualifications */}
         <Card>
@@ -747,11 +746,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Applications */}
+        {/* Recent Crew Members */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-sm font-semibold">
-              Recent Applications
+              Recent Crew Members
             </CardTitle>
             <Button variant="ghost" size="sm" asChild className="text-xs">
               <Link href="/crew">
@@ -794,7 +793,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <StatusBadge
-                        status={app.status as ApplicantStatus}
+                        status={app.status as CrewStatus}
                       />
                     </Link>
                   )
@@ -803,7 +802,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col items-center py-8 text-center">
                   <Users className="h-7 w-7 text-muted-foreground/25" />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    No applications yet
+                    No crew members yet
                   </p>
                 </div>
               )}

@@ -465,7 +465,8 @@ export default function CrewPortalPage() {
                             <TableHead className="text-xs">Voyage</TableHead>
                             <TableHead className="text-xs">Ship</TableHead>
                             <TableHead className="text-xs">Position</TableHead>
-                            <TableHead className="text-xs">Dates</TableHead>
+                            <TableHead className="text-xs">Departure</TableHead>
+                            <TableHead className="text-xs">Return</TableHead>
                             <TableHead className="text-xs">Status</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -473,13 +474,18 @@ export default function CrewPortalPage() {
                           {assignments.map((a: any) => (
                             <TableRow key={a.id}>
                               <TableCell className="text-sm font-medium">{a.voyage_name}</TableCell>
-                              <TableCell className="text-sm">{a.ship_name || "-"}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{a.ship_name || "-"}</TableCell>
                               <TableCell className="text-sm">{a.position_title || "-"}</TableCell>
                               <TableCell className="text-xs text-muted-foreground">
-                                {a.start_date ? new Date(a.start_date).toLocaleDateString() : "?"} - {a.end_date ? new Date(a.end_date).toLocaleDateString() : "TBD"}
+                                {a.start_date ? new Date(a.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "?"}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {a.end_date ? new Date(a.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "TBD"}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="text-[10px] capitalize">{a.status || a.voyage_status}</Badge>
+                                <Badge variant={a.voyage_status === "active" ? "default" : "outline"} className="text-[10px] capitalize">
+                                  {a.status || a.voyage_status}
+                                </Badge>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -661,7 +667,7 @@ export default function CrewPortalPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                    {!Array.isArray(docs) || docs.length === 0 ? (
+                    {!Array.isArray(allDocs) || allDocs.length === 0 ? (
                       <div className="py-12 text-center text-sm text-muted-foreground">No documents uploaded yet.</div>
                     ) : (
                       <Table>
@@ -669,14 +675,14 @@ export default function CrewPortalPage() {
                           <TableRow>
                             <TableHead className="text-xs">Document</TableHead>
                             <TableHead className="text-xs">Type</TableHead>
-                            <TableHead className="text-xs">Required</TableHead>
+                            <TableHead className="text-xs">Verified</TableHead>
                             <TableHead className="text-xs">Expiry</TableHead>
                             <TableHead className="text-xs">Status</TableHead>
                             <TableHead className="text-xs text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {docs.map((doc: any) => {
+                          {allDocs.map((doc: any) => {
                             const isExpired = doc.expiry_date && new Date(doc.expiry_date) < new Date()
                             const isRequired = requiredDocuments.some((rd: any) => rd.type === doc.document_type)
                             return (
@@ -684,10 +690,10 @@ export default function CrewPortalPage() {
                                 <TableCell className="text-sm"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" />{doc.file_name}</div></TableCell>
                                 <TableCell><Badge variant="outline" className="text-[10px]">{doc.document_type?.replace(/_/g, " ")}</Badge></TableCell>
                                 <TableCell>
-                                  {isRequired ? (
-                                    <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">Required</Badge>
+                                  {doc.verified ? (
+                                    <Badge variant="outline" className="text-[10px] bg-success/15 text-success border-success/20 gap-0.5"><CheckCircle2 className="h-3 w-3" />Verified</Badge>
                                   ) : (
-                                    <span className="text-[10px] text-muted-foreground">Optional</span>
+                                    <Badge variant="outline" className="text-[10px] bg-chart-3/15 text-chart-3 border-chart-3/25">Pending</Badge>
                                   )}
                                 </TableCell>
                                 <TableCell className="text-xs">
@@ -697,13 +703,6 @@ export default function CrewPortalPage() {
                                       {new Date(doc.expiry_date).toLocaleDateString()}
                                     </span>
                                   ) : "-"}
-                                </TableCell>
-                                <TableCell>
-                                  {doc.verified ? (
-                                    <Badge variant="outline" className="text-[10px] bg-success/15 text-success border-success/20 gap-0.5"><CheckCircle2 className="h-3 w-3" />Verified</Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-[10px] bg-chart-3/15 text-chart-3 border-chart-3/25">Pending</Badge>
-                                  )}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex items-center justify-end gap-0.5">
@@ -938,11 +937,15 @@ export default function CrewPortalPage() {
                             { label: "Country", value: profile.country },
                             { label: "City", value: profile.city },
                             { label: "Date of Birth", value: profile.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : "-" },
+                            { label: "Gender", value: profile.gender || "-" },
                             { label: "Occupation", value: profile.current_occupation },
                             { label: "Languages", value: profile.languages },
                             { label: "Maritime Quals", value: profile.maritime_qualifications },
                             { label: "Department Pref.", value: profile.department_preference },
                             { label: "Available From", value: profile.availability_start_date ? new Date(profile.availability_start_date).toLocaleDateString() : "-" },
+                            { label: "Available Until", value: profile.availability_end_date ? new Date(profile.availability_end_date).toLocaleDateString() : "-" },
+                            { label: "Duration Sought", value: profile.duration || "-" },
+                            { label: "Rating", value: profile.rating ? `${profile.rating}/5` : "-" },
                           ].map((item) => (
                             <div key={item.label} className="flex flex-col gap-0.5">
                               <span className="text-xs text-muted-foreground">{item.label}</span>

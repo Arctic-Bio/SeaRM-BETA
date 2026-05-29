@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         ca.first_name as crew_first_name, ca.last_name as crew_last_name, ca.email as crew_email,
         v.voyage_name
       FROM crew_invoices ci
-      LEFT JOIN crew_applications ca ON ca.id = ci.crew_id
+      LEFT JOIN crew ca ON ca.id = ci.crew_id
       LEFT JOIN voyages v ON v.id = ci.voyage_id
       WHERE ci.id = ${id}
     `

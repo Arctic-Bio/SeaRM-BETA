@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
           v.voyage_name, s.name as ship_name,
           v.departure_date, v.return_date
         FROM crew_assignments ca
-        JOIN crew_applications c ON ca.crew_id = c.id
+        JOIN crew c ON ca.crew_id = c.id
         JOIN voyages v ON ca.voyage_id = v.id
         LEFT JOIN ships s ON v.ship_id = s.id
         WHERE ca.crew_id = ${crewId}
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
           c.email as crew_email, c.country as crew_country,
           v.voyage_name, s.name as ship_name
         FROM crew_assignments ca
-        JOIN crew_applications c ON ca.crew_id = c.id
+        JOIN crew c ON ca.crew_id = c.id
         JOIN voyages v ON ca.voyage_id = v.id
         LEFT JOIN ships s ON v.ship_id = s.id
         WHERE ca.voyage_id = ${voyageId}
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
           c.first_name || ' ' || c.last_name as crew_name,
           v.voyage_name, s.name as ship_name
         FROM crew_assignments ca
-        JOIN crew_applications c ON ca.crew_id = c.id
+        JOIN crew c ON ca.crew_id = c.id
         JOIN voyages v ON ca.voyage_id = v.id
         LEFT JOIN ships s ON v.ship_id = s.id
         ORDER BY ca.created_at DESC
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    const crewInfo = await sql`SELECT first_name, last_name FROM crew_applications WHERE id = ${crew_id}`
+    const crewInfo = await sql`SELECT first_name, last_name FROM crew WHERE id = ${crew_id}`
     const voyageInfo = await sql`SELECT voyage_name FROM voyages WHERE id = ${voyage_id}`
     const crewName = crewInfo[0] ? `${crewInfo[0].first_name} ${crewInfo[0].last_name}` : "Unknown"
     const voyageName = voyageInfo[0]?.voyage_name || "Unknown"
