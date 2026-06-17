@@ -49,6 +49,8 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { mutate as globalMutate } from "swr"
+import { DocumentEditorDialog } from "@/components/document-editor-dialog"
+import { DocumentPreviewDialog } from "@/components/document-preview-dialog"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -84,6 +86,11 @@ export default function CrewDetailPage({
   const [sigPreviewOpen, setSigPreviewOpen] = useState(false)
   const [sigPreviewData, setSigPreviewData] = useState<{ name: string; type: string; image: string | null; docName: string; signedAt: string } | null>(null)
   const [sigPreviewLoading, setSigPreviewLoading] = useState(false)
+  const [docEditorOpen, setDocEditorOpen] = useState(false)
+  const [docEditorData, setDocEditorData] = useState<any | null>(null)
+  const [docPreviewOpen, setDocPreviewOpen] = useState(false)
+  const [docPreviewData, setDocPreviewData] = useState<any | null>(null)
+  const [hasExpiry, setHasExpiry] = useState(false)
   const { data: seaTimeData, mutate: mutateSeaTime } = useSWR(`/api/crew/${id}/sea-time`, fetcher)
   const { data: checkinData, mutate: mutateCheckins } = useSWR(`/api/crew/${id}/checkins`, fetcher)
   const { data: tagsData, mutate: mutateTags } = useSWR(`/api/crew/${id}/tags`, fetcher)
@@ -747,7 +754,14 @@ export default function CrewDetailPage({
                 </Select>
                 <div className="flex items-center gap-1">
                   <label className="text-[10px] text-muted-foreground whitespace-nowrap">Exp. Date:</label>
-                  <Input type="date" value={docExpiry} onChange={(e) => setDocExpiry(e.target.value)} className="h-8 w-36 text-xs" />
+                  {hasExpiry ? (
+                    <>
+                      <Input type="date" value={docExpiry} onChange={(e) => setDocExpiry(e.target.value)} className="h-8 w-36 text-xs" />
+                      <Button size="sm" variant="ghost" className="h-8 text-xs text-muted-foreground" onClick={() => { setHasExpiry(false); setDocExpiry("") }}>Clear</Button>
+                    </>
+                  ) : (
+                    <Button size="sm" variant="ghost" className="h-8 text-xs text-muted-foreground" onClick={() => setHasExpiry(true)}>Add Date</Button>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Checkbox id="req-sig" checked={docRequiresSig} onCheckedChange={(v) => setDocRequiresSig(!!v)} />
@@ -849,6 +863,12 @@ export default function CrewDetailPage({
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-chart-5" title="Preview" onClick={() => { setDocPreviewData(doc); setDocPreviewOpen(true) }}>
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-chart-4" title="Edit" onClick={() => { setDocEditorData(doc); setDocEditorOpen(true) }}>
+                                <PenLine className="h-3 w-3" />
+                              </Button>
                               <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                                 <a href={`/api/documents/${doc.id}`} download><Download className="h-3 w-3" /></a>
                               </Button>
@@ -1210,6 +1230,21 @@ export default function CrewDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Document Editor Dialog */}
+      <DocumentEditorDialog 
+        open={docEditorOpen} 
+        document={docEditorData} 
+        onClose={() => setDocEditorOpen(false)}
+        onSave={() => { setDocEditorOpen(false); mutateDocs() }}
+      />
+
+      {/* Document Preview Dialog */}
+      <DocumentPreviewDialog
+        open={docPreviewOpen}
+        document={docPreviewData}
+        onClose={() => setDocPreviewOpen(false)}
+      />
     </div>
   )
 }

@@ -334,54 +334,92 @@ export function CrewTable() {
 
             {/* Row 3: Multi-Skill Filter Builder */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Skills filter (AND logic -- must have ALL selected skills)</label>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Select value={skillFilterKey} onValueChange={setSkillFilterKey}>
-                  <SelectTrigger className="h-9 w-48"><SelectValue placeholder="Select skill..." /></SelectTrigger>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Filter by Skills (crew must have ALL selected skills)</label>
+              <div className="flex items-center gap-2 mb-2">
+                <Select value={skillFilterKey || "none"} onValueChange={(val) => setSkillFilterKey(val === "none" ? "" : val)}>
+                  <SelectTrigger className="h-9 flex-1 max-w-xs"><SelectValue placeholder="Select skill..." /></SelectTrigger>
                   <SelectContent>
-                    {SKILL_FIELDS.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}
+                    <SelectItem value="none">Select a skill</SelectItem>
+                    {Array.isArray(SKILL_FIELDS) && SKILL_FIELDS.map((s) => (
+                      <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Select value={skillFilterLevel} onValueChange={setSkillFilterLevel}>
+                <Select value={skillFilterLevel || "any_level"} onValueChange={setSkillFilterLevel}>
                   <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Any level" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="any_level">Any level</SelectItem>
-                    {SKILL_LEVELS.filter(Boolean).map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    {Array.isArray(SKILL_LEVELS) && SKILL_LEVELS.filter(Boolean).map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Button size="sm" variant="outline" onClick={addSkillFilter} disabled={!skillFilterKey} className="h-9 gap-1">
-                  <Plus className="h-3 w-3" /> Add skill
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={addSkillFilter} 
+                  disabled={!skillFilterKey} 
+                  className="h-9 gap-1"
+                >
+                  <Plus className="h-3 w-3" /> Add
                 </Button>
               </div>
-              {filters.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {filters.skills.map((s) => {
-                    const [key, level] = s.split(":")
-                    const label = SKILL_FIELDS.find((f) => f.key === key)?.label ?? key
-                    return (
-                      <Badge key={s} variant="secondary" className="gap-1 text-xs">
-                        {label}{level ? `: ${level}` : " (any)"}
-                        <button onClick={() => removeSkillFilter(s)}><X className="h-3 w-3" /></button>
-                      </Badge>
-                    )
-                  })}
+              {Array.isArray(filters.skills) && filters.skills.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap gap-1">
+                    {filters.skills.map((s) => {
+                      const [key, level] = s.split(":")
+                      const label = (Array.isArray(SKILL_FIELDS) && SKILL_FIELDS.find((f) => f.key === key)?.label) ?? key
+                      return (
+                        <Badge key={s} variant="secondary" className="gap-1 text-xs">
+                          {label}{level && level !== "any_level" ? `: ${level}` : ""}
+                          <button 
+                            onClick={() => removeSkillFilter(s)}
+                            className="hover:opacity-70"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setFilters((prev) => ({ ...prev, skills: [] }))}
+                    className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </Button>
                 </div>
               )}
             </div>
 
             {/* Row 4: Tags */}
-            {allTags && allTags.length > 0 && (
+            {Array.isArray(allTags) && allTags.length > 0 && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Tags (AND logic -- must have ALL selected tags)</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {allTags.map((t: { tag: string; count: string }) => (
-                    <Badge
-                      key={t.tag}
-                      variant={filters.tags.includes(t.tag) ? "default" : "outline"}
-                      className="cursor-pointer text-xs gap-1"
-                      onClick={() => toggleTag(t.tag)}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-muted-foreground block">Filter by Tags (crew must have ALL selected tags)</label>
+                  {Array.isArray(filters.tags) && filters.tags.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFilters((prev) => ({ ...prev, tags: [] }))}
+                      className="h-6 text-xs text-muted-foreground hover:text-foreground"
                     >
-                      <Tag className="h-3 w-3" />{t.tag} ({t.count})
+                      Clear tags
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {allTags.map((t: { tag: string; count: string } | any) => (
+                    <Badge
+                      key={t?.tag || String(Math.random())}
+                      variant={Array.isArray(filters.tags) && filters.tags.includes(t?.tag) ? "default" : "outline"}
+                      className="cursor-pointer text-xs gap-1 transition-colors hover:opacity-80"
+                      onClick={() => t?.tag && toggleTag(t.tag)}
+                    >
+                      <Tag className="h-3 w-3" />{t?.tag || "Unknown"} <span className="text-[10px] opacity-75">({t?.count || 0})</span>
                     </Badge>
                   ))}
                 </div>

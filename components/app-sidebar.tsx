@@ -8,7 +8,7 @@ import {
   Ship, CheckSquare, Kanban, Briefcase, Map, Download,
   AlertTriangle, ClipboardList, Calendar, Shield, LogOut, Settings,
   Wrench, BookOpen, Mail, Puzzle, Lock,
-  Receipt, DatabaseBackup, Settings2, Bell, FileUp,
+  Receipt, DatabaseBackup, Settings2, Bell, FileUp, Database, Plug,
 } from "lucide-react"
 import { useState, useCallback } from "react"
 import useSWR from "swr"
@@ -65,7 +65,9 @@ const navSections = [
     items: [
       { href: "/users", label: "Users & Roles", icon: Shield, settingsKey: "page_users", sysadminOnly: true, permission: PERMISSIONS.USERS.VIEW },
       { href: "/admin/roles", label: "Role Manager", icon: Lock, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.ROLES.VIEW },
+      { href: "/database", label: "Database Manager", icon: Database, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.DATABASE.VIEW },
       { href: "/email", label: "Email Automation", icon: Mail, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
+      { href: "/integrations", label: "Integrations", icon: Plug, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.INTEGRATIONS.VIEW },
 
       { href: "/extensions", label: "Extensions", icon: Puzzle, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },
       { href: "/settings", label: "Settings", icon: Settings, settingsKey: null, sysadminOnly: true, permission: PERMISSIONS.SETTINGS.VIEW },

@@ -6,8 +6,11 @@ export function getDb() {
   if (!cachedSql) {
     // Create stub for build time
     if (!process.env.DATABASE_URL) {
-      // Return a stub function during build
-      return (async (strings: any) => []) as any
+      // Return a stub function (tagged-template) with a .query method during build
+      const stub = (async (..._args: any[]) => []) as any
+      stub.query = async (..._args: any[]) => []
+      stub.unsafe = (s: string) => s
+      return stub
     }
     cachedSql = createNeon(process.env.DATABASE_URL)
   }

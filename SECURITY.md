@@ -205,7 +205,7 @@ We commit to:
 
 ## Questions?
 
-- 📧 Email: arctic.framework@gmail.com
+- 📧 Email: security@searm.dev
 - 📖 See [README.md](README.md) for general docs
 - 🔒 See [DEPLOYMENT.md](DEPLOYMENT.md) for security setup
 

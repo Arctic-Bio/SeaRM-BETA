@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Settings, Plus, Trash2, Eye, EyeOff, Copy, Check, Loader2 } from 'lucide-react'
 
-interface SSO Provider {
+interface SSOProvider {
   id: string
   name: string
   type: 'oauth2' | 'saml2'
@@ -24,7 +24,7 @@ interface SSO Provider {
 }
 
 export function AdminSSOConfig() {
-  const [providers, setProviders] = useState<SSO Provider[]>([])
+  const [providers, setProviders] = useState<SSOProvider[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({})

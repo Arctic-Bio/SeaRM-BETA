@@ -102,12 +102,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (availFrom) {
-      conditions.push(`c.availability_start_date >= $${p}`)
+      conditions.push(`(c.availability_start_date IS NULL OR c.availability_start_date >= $${p})`)
       params.push(availFrom)
       p++
     }
     if (availTo) {
-      conditions.push(`c.availability_start_date <= $${p}`)
+      conditions.push(`(c.availability_end_date IS NULL OR c.availability_end_date >= $${p})`)
       params.push(availTo)
       p++
     }
@@ -119,11 +119,13 @@ export async function GET(request: NextRequest) {
       for (const pair of skillPairs) {
         const [key, level] = pair.split(":")
         if (validKeys.includes(key)) {
-          if (level) {
+          if (level && level !== "any_level") {
+            // Specific level required
             conditions.push(`c.${key} = $${p}`)
             params.push(level)
             p++
           } else {
+            // Any non-empty level is acceptable
             conditions.push(`c.${key} != '' AND c.${key} IS NOT NULL`)
           }
         }
